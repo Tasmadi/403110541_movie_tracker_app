@@ -2,6 +2,8 @@ import '../presenters/home_presenter.dart';
 import '../presenters/search_presenter.dart';
 import '../presenters/splash_presenter.dart';
 import '../repositories/media_repository.dart';
+import '../presenters/movie_detail_presenter.dart';
+import '../presenters/series_detail_presenter.dart';
 import 'api_service.dart';
 
 class ServiceLocator {
@@ -20,6 +22,15 @@ class ServiceLocator {
   );
 
   static final SearchPresenter searchPresenter = SearchPresenter(
+    mediaRepository: mediaRepository,
+  );
+
+  static final MovieDetailPresenter movieDetailPresenter = MovieDetailPresenter(
+    mediaRepository: mediaRepository,
+  );
+
+  static final SeriesDetailPresenter seriesDetailPresenter =
+      SeriesDetailPresenter(
     mediaRepository: mediaRepository,
   );
 

@@ -7,6 +7,7 @@ import '../../models/search_result_item.dart';
 import '../../presenters/search_presenter.dart';
 import '../../services/service_locator.dart';
 import '../../utils/app_colors.dart';
+import '../../routes/app_routes.dart';
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});
@@ -304,81 +305,102 @@ class _SearchScreenState extends State<SearchScreen> {
   ) {
     return Card(
       clipBehavior: Clip.antiAlias,
-      child: SizedBox(
-        height: 150,
-        child: Row(
-          children: [
-            SizedBox(
-              width: 100,
-              height: double.infinity,
-              child: buildPoster(item),
-            ),
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      item.title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      textDirection: TextDirection.ltr,
-                      style: const TextStyle(
-                        color: AppColors.textPrimary,
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        buildTypeBadge(item),
-                        if (item.releaseYear.isNotEmpty) ...[
-                          const SizedBox(width: 8),
-                          Text(
-                            item.releaseYear,
-                            style: const TextStyle(
-                              color: AppColors.textSecondary,
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        const Icon(
-                          Icons.star_rounded,
-                          color: AppColors.secondary,
-                          size: 18,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          item.voteAverage.toStringAsFixed(1),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    Expanded(
-                      child: Text(
-                        item.overview.isEmpty
-                            ? 'خلاصه‌ای موجود نیست.'
-                            : item.overview,
-                        maxLines: 2,
+      child: InkWell(
+        onTap: () {
+          if (item.isMovie) {
+            Navigator.pushNamed(
+              context,
+              AppRoutes.movieDetail,
+              arguments: item.id,
+            );
+
+            return;
+          }
+
+          if (item.isSeries) {
+            Navigator.pushNamed(
+              context,
+              AppRoutes.seriesDetail,
+              arguments: item.id,
+            );
+          }
+        },
+        child: SizedBox(
+          height: 150,
+          child: Row(
+            children: [
+              SizedBox(
+                width: 100,
+                height: double.infinity,
+                child: buildPoster(item),
+              ),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        item.title,
+                        maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         textDirection: TextDirection.ltr,
                         style: const TextStyle(
-                          color: AppColors.textSecondary,
-                          fontSize: 12,
+                          color: AppColors.textPrimary,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
-                    ),
-                  ],
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          buildTypeBadge(item),
+                          if (item.releaseYear.isNotEmpty) ...[
+                            const SizedBox(width: 8),
+                            Text(
+                              item.releaseYear,
+                              style: const TextStyle(
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons.star_rounded,
+                            color: AppColors.secondary,
+                            size: 18,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            item.voteAverage.toStringAsFixed(1),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Expanded(
+                        child: Text(
+                          item.overview.isEmpty
+                              ? 'خلاصه‌ای موجود نیست.'
+                              : item.overview,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          textDirection: TextDirection.ltr,
+                          style: const TextStyle(
+                            color: AppColors.textSecondary,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

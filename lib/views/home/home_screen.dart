@@ -199,85 +199,94 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget buildMovieCard(Movie movie) {
-    return Card(
-      clipBehavior: Clip.antiAlias,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Expanded(
-            child: movie.posterUrl.isEmpty
-                ? const Center(
-                    child: Icon(
-                      Icons.movie_rounded,
-                      size: 48,
-                    ),
-                  )
-                : CachedNetworkImage(
-                    imageUrl: movie.posterUrl,
-                    fit: BoxFit.cover,
-                    placeholder: (
-                      context,
-                      url,
-                    ) {
-                      return const Center(
-                        child: CircularProgressIndicator(),
-                      );
-                    },
-                    errorWidget: (
-                      context,
-                      url,
-                      error,
-                    ) {
-                      return const Center(
+    return InkWell(
+        onTap: () {
+          Navigator.pushNamed(
+            context,
+            AppRoutes.movieDetail,
+            arguments: movie.id,
+          );
+        },
+        borderRadius: BorderRadius.circular(12),
+        child: Card(
+          clipBehavior: Clip.antiAlias,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(
+                child: movie.posterUrl.isEmpty
+                    ? const Center(
                         child: Icon(
-                          Icons.broken_image_rounded,
+                          Icons.movie_rounded,
                           size: 48,
                         ),
-                      );
-                    },
-                  ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(10),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  movie.title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  textDirection: TextDirection.ltr,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 15,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    const Icon(
-                      Icons.star_rounded,
-                      color: AppColors.secondary,
-                      size: 18,
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      movie.voteAverage.toStringAsFixed(1),
-                    ),
-                    const Spacer(),
-                    Text(
-                      movie.releaseYear,
-                      style: const TextStyle(
-                        color: AppColors.textSecondary,
+                      )
+                    : CachedNetworkImage(
+                        imageUrl: movie.posterUrl,
+                        fit: BoxFit.cover,
+                        placeholder: (
+                          context,
+                          url,
+                        ) {
+                          return const Center(
+                            child: CircularProgressIndicator(),
+                          );
+                        },
+                        errorWidget: (
+                          context,
+                          url,
+                          error,
+                        ) {
+                          return const Center(
+                            child: Icon(
+                              Icons.broken_image_rounded,
+                              size: 48,
+                            ),
+                          );
+                        },
                       ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(10),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      movie.title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      textDirection: TextDirection.ltr,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 15,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.star_rounded,
+                          color: AppColors.secondary,
+                          size: 18,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          movie.voteAverage.toStringAsFixed(1),
+                        ),
+                        const Spacer(),
+                        Text(
+                          movie.releaseYear,
+                          style: const TextStyle(
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
-        ],
-      ),
-    );
+        ));
   }
 }
