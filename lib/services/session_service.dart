@@ -7,10 +7,14 @@ class SessionService {
 
   final FlutterSecureStorage storage = const FlutterSecureStorage();
 
+  bool guestMode = false;
+
   Future<void> createSession({
     required int userId,
     int durationDays = 30,
   }) async {
+    guestMode = false;
+
     DateTime expirationDate = DateTime.now().add(
       Duration(
         days: durationDays,
@@ -26,6 +30,16 @@ class SessionService {
       key: expiresAtKey,
       value: expirationDate.toIso8601String(),
     );
+  }
+
+  Future<void> startGuestSession() async {
+    await clearSession();
+
+    guestMode = true;
+  }
+
+  bool get isGuest {
+    return guestMode;
   }
 
   Future<int?> getCurrentUserId() async {
@@ -71,6 +85,8 @@ class SessionService {
   }
 
   Future<void> clearSession() async {
+    guestMode = false;
+
     await storage.delete(
       key: userIdKey,
     );

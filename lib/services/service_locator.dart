@@ -32,7 +32,9 @@ class ServiceLocator {
     apiService: apiService,
   );
 
-  static final SplashPresenter splashPresenter = SplashPresenter();
+  static final SplashPresenter splashPresenter = SplashPresenter(
+    authRepository: authRepository,
+  );
 
   static final HomePresenter homePresenter = HomePresenter(
     mediaRepository: mediaRepository,

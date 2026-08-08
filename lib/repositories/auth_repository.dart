@@ -167,6 +167,14 @@ class AuthRepository {
     );
   }
 
+  Future<void> continueAsGuest() async {
+    await sessionService.startGuestSession();
+  }
+
+  bool isGuest() {
+    return sessionService.isGuest;
+  }
+
   Future<void> logout() async {
     await sessionService.clearSession();
   }

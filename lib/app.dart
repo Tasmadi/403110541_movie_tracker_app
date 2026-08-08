@@ -10,6 +10,9 @@ import 'views/details/movie_detail_screen.dart';
 import 'models/season_arguments.dart';
 import 'views/details/season_detail_screen.dart';
 import 'views/details/series_detail_screen.dart';
+import 'views/auth/auth_welcome_screen.dart';
+import 'views/auth/login_screen.dart';
+import 'views/auth/register_screen.dart';
 
 class MovieTrackerApp extends StatelessWidget {
   const MovieTrackerApp({super.key});
@@ -30,6 +33,15 @@ class MovieTrackerApp extends StatelessWidget {
         },
         AppRoutes.search: (context) {
           return const SearchScreen();
+        },
+        AppRoutes.authWelcome: (context) {
+          return const AuthWelcomeScreen();
+        },
+        AppRoutes.login: (context) {
+          return const LoginScreen();
+        },
+        AppRoutes.register: (context) {
+          return const RegisterScreen();
         },
       },
       onGenerateRoute: (settings) {

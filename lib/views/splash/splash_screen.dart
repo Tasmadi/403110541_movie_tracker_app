@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
 
+import '../../presenters/splash_presenter.dart';
 import '../../routes/app_routes.dart';
 import '../../services/service_locator.dart';
 import '../../utils/app_colors.dart';
 import '../../utils/app_strings.dart';
-import '../../presenters/splash_presenter.dart';
 
 class SplashScreen extends StatefulWidget {
-  const SplashScreen({super.key});
+  const SplashScreen({
+    super.key,
+  });
 
   @override
   State<SplashScreen> createState() {
@@ -23,11 +25,12 @@ class _SplashScreenState extends State<SplashScreen> {
     super.initState();
 
     presenter = ServiceLocator.splashPresenter;
-    openHomeScreen();
+
+    prepareApplication();
   }
 
-  Future<void> openHomeScreen() async {
-    await presenter.prepareApplication();
+  Future<void> prepareApplication() async {
+    bool hasSession = await presenter.prepareApplication();
 
     if (!mounted) {
       return;
@@ -35,55 +38,39 @@ class _SplashScreenState extends State<SplashScreen> {
 
     Navigator.pushReplacementNamed(
       context,
-      AppRoutes.home,
+      hasSession ? AppRoutes.home : AppRoutes.authWelcome,
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return const Scaffold(
       body: SafeArea(
         child: Directionality(
           textDirection: TextDirection.rtl,
           child: Center(
             child: Padding(
-              padding: const EdgeInsets.all(24),
+              padding: EdgeInsets.all(30),
               child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Container(
-                    width: 110,
-                    height: 110,
-                    decoration: BoxDecoration(
-                      color: AppColors.primary,
-                      borderRadius: BorderRadius.circular(28),
-                    ),
-                    child: const Icon(
-                      Icons.movie_filter_rounded,
-                      color: Colors.white,
-                      size: 60,
-                    ),
+                  Icon(
+                    Icons.movie_filter_rounded,
+                    size: 82,
+                    color: AppColors.primary,
                   ),
-                  const SizedBox(height: 28),
-                  const Text(
+                  SizedBox(height: 24),
+                  Text(
                     AppStrings.appName,
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       color: AppColors.textPrimary,
-                      fontSize: 26,
+                      fontSize: 27,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  const SizedBox(height: 14),
-                  const Text(
-                    AppStrings.splashMessage,
-                    style: TextStyle(
-                      color: AppColors.textSecondary,
-                      fontSize: 15,
-                    ),
-                  ),
-                  const SizedBox(height: 28),
-                  const CircularProgressIndicator(),
+                  SizedBox(height: 20),
+                  CircularProgressIndicator(),
                 ],
               ),
             ),

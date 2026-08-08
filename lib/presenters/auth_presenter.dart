@@ -40,6 +40,14 @@ class AuthPresenter {
     return authRepository.getCurrentUser();
   }
 
+  Future<void> continueAsGuest() async {
+    await authRepository.continueAsGuest();
+  }
+
+  bool isGuest() {
+    return authRepository.isGuest();
+  }
+
   Future<void> logout() async {
     await authRepository.logout();
   }

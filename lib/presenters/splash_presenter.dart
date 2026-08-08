@@ -1,7 +1,21 @@
+import '../repositories/auth_repository.dart';
+
 class SplashPresenter {
-  Future<void> prepareApplication() async {
-    await Future<void>.delayed(
-      const Duration(milliseconds: 1200),
+  AuthRepository authRepository;
+
+  SplashPresenter({
+    required this.authRepository,
+  });
+
+  Future<bool> prepareApplication() async {
+    await Future.delayed(
+      const Duration(
+        milliseconds: 900,
+      ),
     );
+
+    return authRepository.getCurrentUser().then((user) {
+      return user != null;
+    });
   }
 }
