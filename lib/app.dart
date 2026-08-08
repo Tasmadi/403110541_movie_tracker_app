@@ -4,6 +4,7 @@ import 'routes/app_routes.dart';
 import 'utils/app_strings.dart';
 import 'utils/app_theme.dart';
 import 'views/home/home_screen.dart';
+import 'views/search/search_screen.dart';
 import 'views/splash/splash_screen.dart';
 
 class MovieTrackerApp extends StatelessWidget {
@@ -22,6 +23,9 @@ class MovieTrackerApp extends StatelessWidget {
         },
         AppRoutes.home: (context) {
           return const HomeScreen();
+        },
+        AppRoutes.search: (context) {
+          return const SearchScreen();
         },
       },
     );

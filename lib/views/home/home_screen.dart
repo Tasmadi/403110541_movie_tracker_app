@@ -1,5 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import '../../routes/app_routes.dart';
 
 import '../../models/movie.dart';
 import '../../presenters/home_presenter.dart';
@@ -78,6 +79,20 @@ class _HomeScreenState extends State<HomeScreen> {
         title: const Text(
           AppStrings.appName,
         ),
+        actions: [
+          IconButton(
+            onPressed: () {
+              Navigator.pushNamed(
+                context,
+                AppRoutes.search,
+              );
+            },
+            tooltip: 'جست‌وجو',
+            icon: const Icon(
+              Icons.search_rounded,
+            ),
+          ),
+        ],
       ),
       body: SafeArea(
         child: Directionality(
