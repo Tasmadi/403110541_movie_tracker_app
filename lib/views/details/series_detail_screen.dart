@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 import '../../models/cast_member.dart';
 import '../../models/season.dart';
+import '../../widgets/review_panel.dart';
 import '../../models/season_arguments.dart';
 import '../../models/series_detail.dart';
 import '../../widgets/rating_panel.dart';
@@ -290,6 +291,10 @@ class _SeriesDetailScreenState extends State<SeriesDetailScreen> {
             releaseYear: item.firstAirYear,
           ),
           RatingPanel(
+            mediaId: item.id,
+            mediaType: 'tv',
+          ),
+          ReviewPanel(
             mediaId: item.id,
             mediaType: 'tv',
           ),

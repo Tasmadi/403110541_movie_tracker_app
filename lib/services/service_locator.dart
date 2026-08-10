@@ -11,6 +11,8 @@ import 'profile_image_service.dart';
 import 'database_service.dart';
 import '../presenters/episode_progress_presenter.dart';
 import '../presenters/rating_presenter.dart';
+import '../presenters/review_presenter.dart';
+import '../repositories/review_repository.dart';
 import '../repositories/rating_repository.dart';
 import '../repositories/episode_progress_repository.dart';
 import 'password_service.dart';
@@ -86,6 +88,15 @@ class ServiceLocator {
 
   static final MovieDetailPresenter movieDetailPresenter = MovieDetailPresenter(
     mediaRepository: mediaRepository,
+  );
+
+  static final ReviewRepository reviewRepository = ReviewRepository(
+    databaseService: databaseService,
+    sessionService: sessionService,
+  );
+
+  static final ReviewPresenter reviewPresenter = ReviewPresenter(
+    repository: reviewRepository,
   );
 
   static final SeriesDetailPresenter seriesDetailPresenter =

@@ -18,7 +18,7 @@ class DatabaseService {
 
     database = await openDatabase(
       path,
-      version: 4,
+      version: 5,
       onCreate: (
         Database db,
         int version,
@@ -42,6 +42,10 @@ class DatabaseService {
 
         if (oldVersion < 4) {
           await createRatingsTable(db);
+        }
+
+        if (oldVersion < 5) {
+          await createReviewsTable(db);
         }
       },
     );
@@ -75,6 +79,8 @@ class DatabaseService {
     );
 
     await createRatingsTable(db);
+
+    await createReviewsTable(db);
   }
 
   Future<void> createUserMediaTable(
@@ -141,6 +147,26 @@ class DatabaseService {
         updated_at TEXT NOT NULL,
         UNIQUE(user_id, media_id, media_type),
         CHECK(rating >= 1 AND rating <= 5)
+      )
+      ''',
+    );
+  }
+
+  Future<void> createReviewsTable(
+    Database db,
+  ) async {
+    await db.execute(
+      '''
+      CREATE TABLE reviews (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        media_id INTEGER NOT NULL,
+        media_type TEXT NOT NULL,
+        review_text TEXT NOT NULL,
+        is_spoiler INTEGER NOT NULL DEFAULT 0,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        UNIQUE(user_id, media_id, media_type)
       )
       ''',
     );
