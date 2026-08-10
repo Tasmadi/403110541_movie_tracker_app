@@ -10,6 +10,8 @@ import 'api_service.dart';
 import 'profile_image_service.dart';
 import 'database_service.dart';
 import '../presenters/episode_progress_presenter.dart';
+import '../presenters/rating_presenter.dart';
+import '../repositories/rating_repository.dart';
 import '../repositories/episode_progress_repository.dart';
 import 'password_service.dart';
 import 'session_service.dart';
@@ -50,6 +52,15 @@ class ServiceLocator {
 
   static final SplashPresenter splashPresenter = SplashPresenter(
     authRepository: authRepository,
+  );
+
+  static final RatingRepository ratingRepository = RatingRepository(
+    databaseService: databaseService,
+    sessionService: sessionService,
+  );
+
+  static final RatingPresenter ratingPresenter = RatingPresenter(
+    repository: ratingRepository,
   );
 
   static final HomePresenter homePresenter = HomePresenter(

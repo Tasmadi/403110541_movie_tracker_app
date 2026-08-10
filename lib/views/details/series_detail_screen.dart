@@ -5,6 +5,7 @@ import '../../models/cast_member.dart';
 import '../../models/season.dart';
 import '../../models/season_arguments.dart';
 import '../../models/series_detail.dart';
+import '../../widgets/rating_panel.dart';
 import '../../presenters/series_detail_presenter.dart';
 import '../../models/series_progress.dart';
 import '../../presenters/episode_progress_presenter.dart';
@@ -287,6 +288,10 @@ class _SeriesDetailScreenState extends State<SeriesDetailScreen> {
             title: item.name,
             posterPath: item.posterPath,
             releaseYear: item.firstAirYear,
+          ),
+          RatingPanel(
+            mediaId: item.id,
+            mediaType: 'tv',
           ),
           buildOverview(item),
           buildInformation(item),

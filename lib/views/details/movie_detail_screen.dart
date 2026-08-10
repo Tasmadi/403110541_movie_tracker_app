@@ -5,6 +5,7 @@ import '../../models/cast_member.dart';
 import '../../models/movie_detail.dart';
 import '../../presenters/movie_detail_presenter.dart';
 import '../../services/service_locator.dart';
+import '../../widgets/rating_panel.dart';
 import '../../utils/app_colors.dart';
 import '../../widgets/media_action_panel.dart';
 
@@ -162,6 +163,10 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
             title: currentMovie.title,
             posterPath: currentMovie.posterPath,
             releaseYear: currentMovie.releaseYear,
+          ),
+          RatingPanel(
+            mediaId: currentMovie.id,
+            mediaType: 'movie',
           ),
           buildOverview(currentMovie),
           buildInformation(currentMovie),
