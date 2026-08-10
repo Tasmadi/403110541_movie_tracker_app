@@ -96,6 +96,18 @@ class _HomeScreenState extends State<HomeScreen> {
             onPressed: () {
               Navigator.pushNamed(
                 context,
+                AppRoutes.watchlist,
+              );
+            },
+            tooltip: 'فهرست تماشا',
+            icon: const Icon(
+              Icons.bookmarks_outlined,
+            ),
+          ),
+          IconButton(
+            onPressed: () {
+              Navigator.pushNamed(
+                context,
                 AppRoutes.profile,
               );
             },

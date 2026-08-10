@@ -6,6 +6,7 @@ import '../../models/season.dart';
 import '../../models/season_arguments.dart';
 import '../../models/series_detail.dart';
 import '../../presenters/series_detail_presenter.dart';
+import '../../widgets/media_action_panel.dart';
 import '../../routes/app_routes.dart';
 import '../../services/service_locator.dart';
 import '../../utils/app_colors.dart';
@@ -136,6 +137,13 @@ class _SeriesDetailScreenState extends State<SeriesDetailScreen> {
         children: [
           buildBackdrop(item),
           buildMainInfo(item),
+          MediaActionPanel(
+            mediaId: item.id,
+            mediaType: 'tv',
+            title: item.name,
+            posterPath: item.posterPath,
+            releaseYear: item.firstAirYear,
+          ),
           buildOverview(item),
           buildInformation(item),
           buildSeasons(item),

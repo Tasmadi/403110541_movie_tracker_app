@@ -6,6 +6,7 @@ import '../../models/movie_detail.dart';
 import '../../presenters/movie_detail_presenter.dart';
 import '../../services/service_locator.dart';
 import '../../utils/app_colors.dart';
+import '../../widgets/media_action_panel.dart';
 
 class MovieDetailScreen extends StatefulWidget {
   final int movieId;
@@ -154,6 +155,13 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
           buildPoster(currentMovie),
           buildMainInformation(
             currentMovie,
+          ),
+          MediaActionPanel(
+            mediaId: currentMovie.id,
+            mediaType: 'movie',
+            title: currentMovie.title,
+            posterPath: currentMovie.posterPath,
+            releaseYear: currentMovie.releaseYear,
           ),
           buildOverview(currentMovie),
           buildInformation(currentMovie),

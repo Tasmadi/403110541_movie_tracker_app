@@ -11,6 +11,8 @@ import 'profile_image_service.dart';
 import 'database_service.dart';
 import 'password_service.dart';
 import 'session_service.dart';
+import '../presenters/user_media_presenter.dart';
+import '../repositories/user_media_repository.dart';
 
 class ServiceLocator {
   ServiceLocator._();
@@ -29,6 +31,15 @@ class ServiceLocator {
     databaseService: databaseService,
     passwordService: passwordService,
     sessionService: sessionService,
+  );
+
+  static final UserMediaRepository userMediaRepository = UserMediaRepository(
+    databaseService: databaseService,
+    sessionService: sessionService,
+  );
+
+  static final UserMediaPresenter userMediaPresenter = UserMediaPresenter(
+    repository: userMediaRepository,
   );
 
   static final MediaRepository mediaRepository = MediaRepository(

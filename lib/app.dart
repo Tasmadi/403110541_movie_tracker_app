@@ -13,6 +13,7 @@ import 'views/details/series_detail_screen.dart';
 import 'views/auth/auth_welcome_screen.dart';
 import 'views/profile/profile_screen.dart';
 import 'views/auth/login_screen.dart';
+import 'views/watchlist/watchlist_screen.dart';
 import 'views/auth/register_screen.dart';
 
 class MovieTrackerApp extends StatelessWidget {
@@ -46,6 +47,9 @@ class MovieTrackerApp extends StatelessWidget {
         },
         AppRoutes.profile: (context) {
           return const ProfileScreen();
+        },
+        AppRoutes.watchlist: (context) {
+          return const WatchlistScreen();
         },
       },
       onGenerateRoute: (settings) {

@@ -18,12 +18,21 @@ class DatabaseService {
 
     database = await openDatabase(
       path,
-      version: 1,
+      version: 2,
       onCreate: (
         Database db,
         int version,
       ) async {
         await createTables(db);
+      },
+      onUpgrade: (
+        Database db,
+        int oldVersion,
+        int newVersion,
+      ) async {
+        if (oldVersion < 2) {
+          await createUserMediaTable(db);
+        }
       },
     );
 
@@ -46,6 +55,30 @@ class DatabaseService {
         bio TEXT NOT NULL DEFAULT '',
         created_at TEXT NOT NULL,
         updated_at TEXT NOT NULL
+      )
+      ''',
+    );
+
+    await createUserMediaTable(db);
+  }
+
+  Future<void> createUserMediaTable(
+    Database db,
+  ) async {
+    await db.execute(
+      '''
+      CREATE TABLE user_media (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        media_id INTEGER NOT NULL,
+        media_type TEXT NOT NULL,
+        title TEXT NOT NULL,
+        poster_path TEXT,
+        release_year TEXT NOT NULL DEFAULT '',
+        watch_status TEXT NOT NULL DEFAULT 'none',
+        is_favorite INTEGER NOT NULL DEFAULT 0,
+        updated_at TEXT NOT NULL,
+        UNIQUE(user_id, media_id, media_type)
       )
       ''',
     );
