@@ -54,4 +54,32 @@ class Episode {
 
     return '$runtime دقیقه';
   }
+
+  bool get isReleased {
+    if (airDate.isEmpty) {
+      return true;
+    }
+
+    DateTime? releaseDate = DateTime.tryParse(airDate);
+
+    if (releaseDate == null) {
+      return true;
+    }
+
+    DateTime now = DateTime.now();
+
+    DateTime today = DateTime(
+      now.year,
+      now.month,
+      now.day,
+    );
+
+    DateTime episodeDate = DateTime(
+      releaseDate.year,
+      releaseDate.month,
+      releaseDate.day,
+    );
+
+    return !episodeDate.isAfter(today);
+  }
 }

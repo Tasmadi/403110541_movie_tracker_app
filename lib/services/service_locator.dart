@@ -9,6 +9,8 @@ import '../repositories/media_repository.dart';
 import 'api_service.dart';
 import 'profile_image_service.dart';
 import 'database_service.dart';
+import '../presenters/episode_progress_presenter.dart';
+import '../repositories/episode_progress_repository.dart';
 import 'password_service.dart';
 import 'session_service.dart';
 import '../presenters/user_media_presenter.dart';
@@ -56,6 +58,19 @@ class ServiceLocator {
 
   static final SearchPresenter searchPresenter = SearchPresenter(
     mediaRepository: mediaRepository,
+  );
+
+  static final EpisodeProgressRepository episodeProgressRepository =
+      EpisodeProgressRepository(
+    databaseService: databaseService,
+    sessionService: sessionService,
+  );
+
+  static final EpisodeProgressPresenter episodeProgressPresenter =
+      EpisodeProgressPresenter(
+    episodeRepository: episodeProgressRepository,
+    mediaRepository: mediaRepository,
+    userMediaRepository: userMediaRepository,
   );
 
   static final MovieDetailPresenter movieDetailPresenter = MovieDetailPresenter(

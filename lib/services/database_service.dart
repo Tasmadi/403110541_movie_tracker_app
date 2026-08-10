@@ -18,7 +18,7 @@ class DatabaseService {
 
     database = await openDatabase(
       path,
-      version: 2,
+      version: 3,
       onCreate: (
         Database db,
         int version,
@@ -32,6 +32,12 @@ class DatabaseService {
       ) async {
         if (oldVersion < 2) {
           await createUserMediaTable(db);
+        }
+
+        if (oldVersion < 3) {
+          await createWatchedEpisodesTable(
+            db,
+          );
         }
       },
     );
@@ -60,6 +66,10 @@ class DatabaseService {
     );
 
     await createUserMediaTable(db);
+
+    await createWatchedEpisodesTable(
+      db,
+    );
   }
 
   Future<void> createUserMediaTable(
@@ -84,12 +94,40 @@ class DatabaseService {
     );
   }
 
+  Future<void> createWatchedEpisodesTable(
+    Database db,
+  ) async {
+    await db.execute(
+      '''
+      CREATE TABLE watched_episodes (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        series_id INTEGER NOT NULL,
+        season_number INTEGER NOT NULL,
+        episode_number INTEGER NOT NULL,
+        episode_id INTEGER NOT NULL,
+        title TEXT NOT NULL,
+        air_date TEXT NOT NULL DEFAULT '',
+        runtime INTEGER NOT NULL DEFAULT 0,
+        watched_at TEXT NOT NULL,
+        UNIQUE(
+          user_id,
+          series_id,
+          season_number,
+          episode_number
+        )
+      )
+      ''',
+    );
+  }
+
   Future<void> close() async {
     if (database == null) {
       return;
     }
 
     await database!.close();
+
     database = null;
   }
 }

@@ -6,6 +6,8 @@ import '../../models/season.dart';
 import '../../models/season_arguments.dart';
 import '../../models/series_detail.dart';
 import '../../presenters/series_detail_presenter.dart';
+import '../../models/series_progress.dart';
+import '../../presenters/episode_progress_presenter.dart';
 import '../../widgets/media_action_panel.dart';
 import '../../routes/app_routes.dart';
 import '../../services/service_locator.dart';
@@ -34,11 +36,19 @@ class _SeriesDetailScreenState extends State<SeriesDetailScreen> {
 
   String? errorMessage;
 
+  late final EpisodeProgressPresenter progressPresenter;
+
+  SeriesProgress? progress;
+
+  bool isProgressLoading = false;
+
   @override
   void initState() {
     super.initState();
 
     presenter = ServiceLocator.seriesDetailPresenter;
+
+    progressPresenter = ServiceLocator.episodeProgressPresenter;
 
     loadSeries();
   }
@@ -63,6 +73,7 @@ class _SeriesDetailScreenState extends State<SeriesDetailScreen> {
 
       setState(() {
         series = result;
+        loadProgress(result);
         isLoading = false;
       });
     } catch (error) {
@@ -95,6 +106,138 @@ class _SeriesDetailScreenState extends State<SeriesDetailScreen> {
         ),
       ),
     );
+  }
+
+  Widget buildProgressSection() {
+    if (progressPresenter.isGuest()) {
+      return const SizedBox.shrink();
+    }
+
+    if (isProgressLoading) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(
+          horizontal: 20,
+          vertical: 10,
+        ),
+        child: LinearProgressIndicator(),
+      );
+    }
+
+    if (progress == null) {
+      return const SizedBox.shrink();
+    }
+
+    Color progressColor;
+
+    switch (progress!.state) {
+      case SeriesProgressState.completed:
+        progressColor = Colors.deepPurple;
+        break;
+
+      case SeriesProgressState.upToDate:
+        progressColor = Colors.green;
+        break;
+
+      case SeriesProgressState.stopped:
+        progressColor = AppColors.error;
+        break;
+
+      case SeriesProgressState.inProgress:
+        progressColor = Colors.amber;
+        break;
+
+      default:
+        progressColor = Colors.black;
+    }
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        20,
+        14,
+        20,
+        8,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Text(
+                'پیشرفت تماشا',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const Spacer(),
+              Text(
+                '${progress!.percentage}٪',
+                style: TextStyle(
+                  color: progressColor,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 9),
+          LinearProgressIndicator(
+            value: progress!.progress,
+            minHeight: 8,
+            color: progressColor,
+            backgroundColor: const Color(
+              0xFFE6E6EC,
+            ),
+            borderRadius: BorderRadius.circular(
+              20,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            '${progress!.watchedEpisodes} از '
+            '${progress!.releasedEpisodes} قسمت منتشرشده دیده شده'
+            ' • ${progress!.remainingEpisodes} قسمت باقی‌مانده',
+            style: const TextStyle(
+              color: AppColors.textSecondary,
+              fontSize: 12,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> loadProgress(
+    SeriesDetail item,
+  ) async {
+    if (progressPresenter.isGuest()) {
+      return;
+    }
+
+    setState(() {
+      isProgressLoading = true;
+    });
+
+    try {
+      SeriesProgress result = await progressPresenter.loadSeriesProgress(
+        item,
+      );
+
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        progress = result;
+        isProgressLoading = false;
+      });
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        isProgressLoading = false;
+      });
+    }
   }
 
   Widget buildBody() {
@@ -136,6 +279,7 @@ class _SeriesDetailScreenState extends State<SeriesDetailScreen> {
         ),
         children: [
           buildBackdrop(item),
+          buildProgressSection(),
           buildMainInfo(item),
           MediaActionPanel(
             mediaId: item.id,
@@ -294,8 +438,8 @@ class _SeriesDetailScreenState extends State<SeriesDetailScreen> {
         bottom: 10,
       ),
       child: ListTile(
-        onTap: () {
-          Navigator.pushNamed(
+        onTap: () async {
+          await Navigator.pushNamed(
             context,
             AppRoutes.seasonDetail,
             arguments: SeasonArguments(
@@ -304,6 +448,12 @@ class _SeriesDetailScreenState extends State<SeriesDetailScreen> {
               seriesName: series.name,
             ),
           );
+
+          if (!mounted) {
+            return;
+          }
+
+          await loadProgress(series);
         },
         leading: const CircleAvatar(
           child: Icon(

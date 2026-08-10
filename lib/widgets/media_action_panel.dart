@@ -12,6 +12,7 @@ class MediaActionPanel extends StatefulWidget {
   final String title;
   final String? posterPath;
   final String releaseYear;
+  final VoidCallback? onChanged;
 
   const MediaActionPanel({
     super.key,
@@ -20,6 +21,7 @@ class MediaActionPanel extends StatefulWidget {
     required this.title,
     required this.posterPath,
     required this.releaseYear,
+    this.onChanged,
   });
 
   @override
@@ -104,7 +106,7 @@ class _MediaActionPanelState extends State<MediaActionPanel> {
     );
   }
 
-  Future<void> changeStatus(
+  Future changeStatus(
     String value,
   ) async {
     if (presenter.isGuest()) {
@@ -135,6 +137,8 @@ class _MediaActionPanelState extends State<MediaActionPanel> {
 
         isFavorite = item?.isFavorite ?? false;
       });
+
+      widget.onChanged?.call();
     } catch (error) {
       if (!mounted) {
         return;
