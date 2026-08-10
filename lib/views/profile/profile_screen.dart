@@ -566,181 +566,289 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> showChangePasswordDialog() async {
-    TextEditingController currentPasswordController = TextEditingController();
+    if (user?.id == null) {
+      return;
+    }
 
-    TextEditingController newPasswordController = TextEditingController();
-
-    TextEditingController confirmPasswordController = TextEditingController();
-
-    GlobalKey<FormState> passwordFormKey = GlobalKey<FormState>();
-
-    bool submitting = false;
-
-    ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
-
-    await showDialog<void>(
+    bool? passwordChanged = await showDialog<bool>(
       context: context,
       barrierDismissible: false,
-      builder: (dialogContext) {
-        return StatefulBuilder(
-          builder: (
-            context,
-            setDialogState,
-          ) {
-            return AlertDialog(
-              title: const Text(
-                'تغییر رمز عبور',
-              ),
-              content: Form(
-                key: passwordFormKey,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    TextFormField(
-                      controller: currentPasswordController,
-                      obscureText: true,
-                      textDirection: TextDirection.ltr,
-                      decoration: const InputDecoration(
-                        labelText: 'رمز عبور فعلی',
-                      ),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'رمز فعلی را وارد کنید.';
-                        }
-
-                        return null;
-                      },
-                    ),
-                    const SizedBox(
-                      height: 14,
-                    ),
-                    TextFormField(
-                      controller: newPasswordController,
-                      obscureText: true,
-                      textDirection: TextDirection.ltr,
-                      decoration: const InputDecoration(
-                        labelText: 'رمز عبور جدید',
-                      ),
-                      validator: (value) {
-                        if (value == null || value.length < 8) {
-                          return 'حداقل ۸ کاراکتر وارد کنید.';
-                        }
-
-                        return null;
-                      },
-                    ),
-                    const SizedBox(
-                      height: 14,
-                    ),
-                    TextFormField(
-                      controller: confirmPasswordController,
-                      obscureText: true,
-                      textDirection: TextDirection.ltr,
-                      decoration: const InputDecoration(
-                        labelText: 'تکرار رمز جدید',
-                      ),
-                      validator: (value) {
-                        if (value != newPasswordController.text) {
-                          return 'رمزها یکسان نیستند.';
-                        }
-
-                        return null;
-                      },
-                    ),
-                  ],
-                ),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: submitting
-                      ? null
-                      : () {
-                          Navigator.pop(
-                            dialogContext,
-                          );
-                        },
-                  child: const Text(
-                    'انصراف',
-                  ),
-                ),
-                FilledButton(
-                  onPressed: submitting
-                      ? null
-                      : () async {
-                          if (!passwordFormKey.currentState!.validate()) {
-                            return;
-                          }
-
-                          NavigatorState dialogNavigator = Navigator.of(
-                            dialogContext,
-                          );
-
-                          setDialogState(() {
-                            submitting = true;
-                          });
-
-                          try {
-                            await presenter.changePassword(
-                              userId: user!.id!,
-                              currentPassword: currentPasswordController.text,
-                              newPassword: newPasswordController.text,
-                            );
-
-                            if (!mounted) {
-                              return;
-                            }
-
-                            dialogNavigator.pop();
-
-                            messenger.showSnackBar(
-                              const SnackBar(
-                                content: Text(
-                                  'رمز عبور تغییر کرد.',
-                                ),
-                              ),
-                            );
-                          } catch (error) {
-                            if (!mounted) {
-                              return;
-                            }
-
-                            setDialogState(() {
-                              submitting = false;
-                            });
-
-                            messenger.showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                  error.toString().replaceFirst(
-                                        'Exception: ',
-                                        '',
-                                      ),
-                                ),
-                              ),
-                            );
-                          }
-                        },
-                  child: submitting
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                          ),
-                        )
-                      : const Text(
-                          'تغییر رمز',
-                        ),
-                ),
-              ],
-            );
-          },
+      builder: (context) {
+        return ChangePasswordDialog(
+          userId: user!.id!,
+          presenter: presenter,
         );
       },
     );
 
+    if (!mounted) {
+      return;
+    }
+
+    if (passwordChanged == true) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'رمز عبور با موفقیت تغییر کرد.',
+          ),
+        ),
+      );
+    }
+  }
+}
+
+class ChangePasswordDialog extends StatefulWidget {
+  final int userId;
+  final AuthPresenter presenter;
+
+  const ChangePasswordDialog({
+    super.key,
+    required this.userId,
+    required this.presenter,
+  });
+
+  @override
+  State<ChangePasswordDialog> createState() {
+    return _ChangePasswordDialogState();
+  }
+}
+
+class _ChangePasswordDialogState extends State<ChangePasswordDialog> {
+  final GlobalKey<FormState> formKey = GlobalKey<FormState>();
+
+  final TextEditingController currentPasswordController =
+      TextEditingController();
+
+  final TextEditingController newPasswordController = TextEditingController();
+
+  final TextEditingController confirmPasswordController =
+      TextEditingController();
+
+  bool isLoading = false;
+
+  bool obscureCurrentPassword = true;
+  bool obscureNewPassword = true;
+  bool obscureConfirmPassword = true;
+
+  String? errorMessage;
+
+  @override
+  void dispose() {
     currentPasswordController.dispose();
     newPasswordController.dispose();
     confirmPasswordController.dispose();
+
+    super.dispose();
+  }
+
+  Future<void> changePassword() async {
+    if (!formKey.currentState!.validate()) {
+      return;
+    }
+
+    FocusScope.of(context).unfocus();
+
+    setState(() {
+      isLoading = true;
+      errorMessage = null;
+    });
+
+    try {
+      await widget.presenter.changePassword(
+        userId: widget.userId,
+        currentPassword: currentPasswordController.text,
+        newPassword: newPasswordController.text,
+      );
+
+      if (!mounted) {
+        return;
+      }
+
+      Navigator.of(context).pop(true);
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        isLoading = false;
+
+        errorMessage = error.toString().replaceFirst(
+              'Exception: ',
+              '',
+            );
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text(
+        'تغییر رمز عبور',
+      ),
+      content: SingleChildScrollView(
+        child: Form(
+          key: formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextFormField(
+                controller: currentPasswordController,
+                obscureText: obscureCurrentPassword,
+                textDirection: TextDirection.ltr,
+                decoration: InputDecoration(
+                  labelText: 'رمز عبور فعلی',
+                  prefixIcon: const Icon(
+                    Icons.lock_outline_rounded,
+                  ),
+                  suffixIcon: IconButton(
+                    onPressed: () {
+                      setState(() {
+                        obscureCurrentPassword = !obscureCurrentPassword;
+                      });
+                    },
+                    icon: Icon(
+                      obscureCurrentPassword
+                          ? Icons.visibility_rounded
+                          : Icons.visibility_off_rounded,
+                    ),
+                  ),
+                ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'رمز عبور فعلی را وارد کنید.';
+                  }
+
+                  return null;
+                },
+              ),
+              const SizedBox(height: 14),
+              TextFormField(
+                controller: newPasswordController,
+                obscureText: obscureNewPassword,
+                textDirection: TextDirection.ltr,
+                decoration: InputDecoration(
+                  labelText: 'رمز عبور جدید',
+                  prefixIcon: const Icon(
+                    Icons.lock_reset_rounded,
+                  ),
+                  suffixIcon: IconButton(
+                    onPressed: () {
+                      setState(() {
+                        obscureNewPassword = !obscureNewPassword;
+                      });
+                    },
+                    icon: Icon(
+                      obscureNewPassword
+                          ? Icons.visibility_rounded
+                          : Icons.visibility_off_rounded,
+                    ),
+                  ),
+                ),
+                validator: (value) {
+                  if (value == null || value.length < 8) {
+                    return 'رمز جدید باید حداقل ۸ کاراکتر باشد.';
+                  }
+
+                  if (value == currentPasswordController.text) {
+                    return 'رمز جدید باید با رمز فعلی متفاوت باشد.';
+                  }
+
+                  return null;
+                },
+              ),
+              const SizedBox(height: 14),
+              TextFormField(
+                controller: confirmPasswordController,
+                obscureText: obscureConfirmPassword,
+                textDirection: TextDirection.ltr,
+                decoration: InputDecoration(
+                  labelText: 'تکرار رمز عبور جدید',
+                  prefixIcon: const Icon(
+                    Icons.lock_outline_rounded,
+                  ),
+                  suffixIcon: IconButton(
+                    onPressed: () {
+                      setState(() {
+                        obscureConfirmPassword = !obscureConfirmPassword;
+                      });
+                    },
+                    icon: Icon(
+                      obscureConfirmPassword
+                          ? Icons.visibility_rounded
+                          : Icons.visibility_off_rounded,
+                    ),
+                  ),
+                ),
+                validator: (value) {
+                  if (value != newPasswordController.text) {
+                    return 'رمزهای جدید یکسان نیستند.';
+                  }
+
+                  return null;
+                },
+              ),
+              if (errorMessage != null) ...[
+                const SizedBox(height: 16),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: AppColors.error.withOpacity(0.08),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Icon(
+                        Icons.error_outline_rounded,
+                        color: AppColors.error,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          errorMessage!,
+                          style: const TextStyle(
+                            color: AppColors.error,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: isLoading
+              ? null
+              : () {
+                  Navigator.of(context).pop(false);
+                },
+          child: const Text(
+            'انصراف',
+          ),
+        ),
+        FilledButton(
+          onPressed: isLoading ? null : changePassword,
+          child: isLoading
+              ? const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                  ),
+                )
+              : const Text(
+                  'تغییر رمز',
+                ),
+        ),
+      ],
+    );
   }
 }
