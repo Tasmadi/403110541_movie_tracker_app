@@ -167,6 +167,136 @@ class AuthRepository {
     );
   }
 
+  Future<User> updateProfile({
+    required int userId,
+    required String fullName,
+    required String username,
+    required String email,
+    required String bio,
+    String? profileImagePath,
+  }) async {
+    Database db = await databaseService.getDatabase();
+
+    String normalizedUsername = username.trim().toLowerCase();
+
+    String normalizedEmail = email.trim().toLowerCase();
+
+    List<Map<String, dynamic>> duplicates = await db.query(
+      'users',
+      where: '(username = ? OR email = ?) AND id != ?',
+      whereArgs: [
+        normalizedUsername,
+        normalizedEmail,
+        userId,
+      ],
+    );
+
+    for (Map<String, dynamic> row in duplicates) {
+      if (row['email'] == normalizedEmail) {
+        throw Exception(
+          'این ایمیل قبلاً ثبت شده است.',
+        );
+      }
+
+      if (row['username'] == normalizedUsername) {
+        throw Exception(
+          'این نام کاربری قبلاً ثبت شده است.',
+        );
+      }
+    }
+
+    String now = DateTime.now().toIso8601String();
+
+    await db.update(
+      'users',
+      {
+        'full_name': fullName.trim(),
+        'username': normalizedUsername,
+        'email': normalizedEmail,
+        'bio': bio.trim(),
+        'profile_image_path': profileImagePath,
+        'updated_at': now,
+      },
+      where: 'id = ?',
+      whereArgs: [
+        userId,
+      ],
+    );
+
+    List<Map<String, dynamic>> rows = await db.query(
+      'users',
+      where: 'id = ?',
+      whereArgs: [
+        userId,
+      ],
+      limit: 1,
+    );
+
+    if (rows.isEmpty) {
+      throw Exception(
+        'کاربر پیدا نشد.',
+      );
+    }
+
+    return User.fromMap(
+      rows.first,
+    );
+  }
+
+  Future<void> changePassword({
+    required int userId,
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    Database db = await databaseService.getDatabase();
+
+    List<Map<String, dynamic>> rows = await db.query(
+      'users',
+      where: 'id = ?',
+      whereArgs: [
+        userId,
+      ],
+      limit: 1,
+    );
+
+    if (rows.isEmpty) {
+      throw Exception(
+        'کاربر پیدا نشد.',
+      );
+    }
+
+    Map<String, dynamic> row = rows.first;
+
+    bool currentPasswordIsValid = await passwordService.verifyPassword(
+      password: currentPassword,
+      storedHash: row['password_hash'],
+      storedSalt: row['password_salt'],
+    );
+
+    if (!currentPasswordIsValid) {
+      throw Exception(
+        'رمز عبور فعلی صحیح نیست.',
+      );
+    }
+
+    PasswordHashResult passwordResult = await passwordService.hashPassword(
+      newPassword,
+    );
+
+    await db.update(
+      'users',
+      {
+        'password_hash': passwordResult.hash,
+        'password_salt': passwordResult.salt,
+        'updated_at': DateTime.now().toIso8601String(),
+      },
+      where: 'id = ?',
+      whereArgs: [
+        userId,
+      ],
+    );
+  }
+
   Future<void> continueAsGuest() async {
     await sessionService.startGuestSession();
   }

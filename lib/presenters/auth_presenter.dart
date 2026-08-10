@@ -40,6 +40,36 @@ class AuthPresenter {
     return authRepository.getCurrentUser();
   }
 
+  Future<User> updateProfile({
+    required int userId,
+    required String fullName,
+    required String username,
+    required String email,
+    required String bio,
+    String? profileImagePath,
+  }) async {
+    return authRepository.updateProfile(
+      userId: userId,
+      fullName: fullName,
+      username: username,
+      email: email,
+      bio: bio,
+      profileImagePath: profileImagePath,
+    );
+  }
+
+  Future<void> changePassword({
+    required int userId,
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    await authRepository.changePassword(
+      userId: userId,
+      currentPassword: currentPassword,
+      newPassword: newPassword,
+    );
+  }
+
   Future<void> continueAsGuest() async {
     await authRepository.continueAsGuest();
   }

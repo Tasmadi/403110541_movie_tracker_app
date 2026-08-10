@@ -18,4 +18,6 @@ class AppRoutes {
   static const String seriesDetail = '/series-detail';
 
   static const String seasonDetail = '/season-detail';
+
+  static const String profile = '/profile';
 }

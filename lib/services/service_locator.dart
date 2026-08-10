@@ -7,6 +7,7 @@ import '../presenters/splash_presenter.dart';
 import '../repositories/auth_repository.dart';
 import '../repositories/media_repository.dart';
 import 'api_service.dart';
+import 'profile_image_service.dart';
 import 'database_service.dart';
 import 'password_service.dart';
 import 'session_service.dart';
@@ -21,6 +22,8 @@ class ServiceLocator {
   static final PasswordService passwordService = PasswordService();
 
   static final SessionService sessionService = SessionService();
+
+  static final ProfileImageService profileImageService = ProfileImageService();
 
   static final AuthRepository authRepository = AuthRepository(
     databaseService: databaseService,

@@ -92,6 +92,18 @@ class _HomeScreenState extends State<HomeScreen> {
               Icons.search_rounded,
             ),
           ),
+          IconButton(
+            onPressed: () {
+              Navigator.pushNamed(
+                context,
+                AppRoutes.profile,
+              );
+            },
+            tooltip: 'پروفایل',
+            icon: const Icon(
+              Icons.account_circle_outlined,
+            ),
+          ),
         ],
       ),
       body: SafeArea(

@@ -11,6 +11,7 @@ import 'models/season_arguments.dart';
 import 'views/details/season_detail_screen.dart';
 import 'views/details/series_detail_screen.dart';
 import 'views/auth/auth_welcome_screen.dart';
+import 'views/profile/profile_screen.dart';
 import 'views/auth/login_screen.dart';
 import 'views/auth/register_screen.dart';
 
@@ -42,6 +43,9 @@ class MovieTrackerApp extends StatelessWidget {
         },
         AppRoutes.register: (context) {
           return const RegisterScreen();
+        },
+        AppRoutes.profile: (context) {
+          return const ProfileScreen();
         },
       },
       onGenerateRoute: (settings) {
