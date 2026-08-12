@@ -250,6 +250,22 @@ class _LoginScreenState extends State<LoginScreen> {
                             });
                           },
                   ),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: TextButton(
+                      onPressed: isLoading
+                          ? null
+                          : () {
+                              Navigator.pushNamed(
+                                context,
+                                AppRoutes.forgotPassword,
+                              );
+                            },
+                      child: const Text(
+                        'رمز عبور را فراموش کرده‌اید؟',
+                      ),
+                    ),
+                  ),
                   const SizedBox(height: 24),
                   FilledButton(
                     onPressed: isLoading ? null : login,

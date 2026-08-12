@@ -17,6 +17,9 @@ import 'models/custom_list_media_arguments.dart';
 import 'views/lists/custom_list_detail_screen.dart';
 import 'views/profile/user_statistics_screen.dart';
 import 'views/lists/custom_list_picker_screen.dart';
+import 'views/auth/forgot_password_screen.dart';
+import 'views/auth/reset_password_screen.dart';
+import 'views/auth/verify_reset_code_screen.dart';
 import 'views/lists/custom_lists_screen.dart';
 import 'views/auth/login_screen.dart';
 import 'views/watchlist/watchlist_screen.dart';
@@ -62,6 +65,9 @@ class MovieTrackerApp extends StatelessWidget {
         },
         AppRoutes.statistics: (context) {
           return const UserStatisticsScreen();
+        },
+        AppRoutes.forgotPassword: (context) {
+          return const ForgotPasswordScreen();
         },
       },
       onGenerateRoute: (settings) {
@@ -129,6 +135,34 @@ class MovieTrackerApp extends StatelessWidget {
               builder: (context) {
                 return CustomListDetailScreen(
                   arguments: arguments,
+                );
+              },
+            );
+          }
+        }
+
+        if (settings.name == AppRoutes.verifyResetCode) {
+          Object? arguments = settings.arguments;
+
+          if (arguments is String) {
+            return MaterialPageRoute(
+              builder: (context) {
+                return VerifyResetCodeScreen(
+                  email: arguments,
+                );
+              },
+            );
+          }
+        }
+
+        if (settings.name == AppRoutes.resetPassword) {
+          Object? arguments = settings.arguments;
+
+          if (arguments is String) {
+            return MaterialPageRoute(
+              builder: (context) {
+                return ResetPasswordScreen(
+                  email: arguments,
                 );
               },
             );

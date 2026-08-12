@@ -12,6 +12,9 @@ import 'database_service.dart';
 import '../presenters/episode_progress_presenter.dart';
 import '../presenters/custom_list_presenter.dart';
 import '../repositories/custom_list_repository.dart';
+import '../presenters/password_reset_presenter.dart';
+import 'email_service.dart';
+import 'password_reset_service.dart';
 import '../presenters/rating_presenter.dart';
 import '../presenters/review_presenter.dart';
 import '../presenters/user_statistics_presenter.dart';
@@ -136,5 +139,19 @@ class ServiceLocator {
       UserStatisticsPresenter(
     repository: userStatisticsRepository,
     mediaRepository: mediaRepository,
+  );
+
+  static final EmailService emailService = EmailService();
+
+  static final PasswordResetService passwordResetService = PasswordResetService(
+    databaseService: databaseService,
+    emailService: emailService,
+    passwordService: passwordService,
+    sessionService: sessionService,
+  );
+
+  static final PasswordResetPresenter passwordResetPresenter =
+      PasswordResetPresenter(
+    service: passwordResetService,
   );
 }

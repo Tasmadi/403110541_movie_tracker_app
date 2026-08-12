@@ -30,4 +30,10 @@ class AppRoutes {
   static const String customListDetail = '/custom-list-detail';
 
   static const String statistics = '/statistics';
+
+  static const String forgotPassword = '/forgot-password';
+
+  static const String verifyResetCode = '/verify-reset-code';
+
+  static const String resetPassword = '/reset-password';
 }
