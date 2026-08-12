@@ -15,6 +15,7 @@ import 'views/profile/profile_screen.dart';
 import 'models/custom_list_detail_arguments.dart';
 import 'models/custom_list_media_arguments.dart';
 import 'views/lists/custom_list_detail_screen.dart';
+import 'views/profile/user_statistics_screen.dart';
 import 'views/lists/custom_list_picker_screen.dart';
 import 'views/lists/custom_lists_screen.dart';
 import 'views/auth/login_screen.dart';
@@ -58,6 +59,9 @@ class MovieTrackerApp extends StatelessWidget {
         },
         AppRoutes.customLists: (context) {
           return const CustomListsScreen();
+        },
+        AppRoutes.statistics: (context) {
+          return const UserStatisticsScreen();
         },
       },
       onGenerateRoute: (settings) {

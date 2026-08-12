@@ -14,6 +14,8 @@ import '../presenters/custom_list_presenter.dart';
 import '../repositories/custom_list_repository.dart';
 import '../presenters/rating_presenter.dart';
 import '../presenters/review_presenter.dart';
+import '../presenters/user_statistics_presenter.dart';
+import '../repositories/user_statistics_repository.dart';
 import '../repositories/review_repository.dart';
 import '../repositories/rating_repository.dart';
 import '../repositories/episode_progress_repository.dart';
@@ -122,5 +124,17 @@ class ServiceLocator {
 
   static final CustomListPresenter customListPresenter = CustomListPresenter(
     repository: customListRepository,
+  );
+
+  static final UserStatisticsRepository userStatisticsRepository =
+      UserStatisticsRepository(
+    databaseService: databaseService,
+    sessionService: sessionService,
+  );
+
+  static final UserStatisticsPresenter userStatisticsPresenter =
+      UserStatisticsPresenter(
+    repository: userStatisticsRepository,
+    mediaRepository: mediaRepository,
   );
 }

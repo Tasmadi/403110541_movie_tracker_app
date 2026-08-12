@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 
 import '../../models/user.dart';
+import '../../widgets/profile_stats_card.dart';
 import '../../presenters/auth_presenter.dart';
 import '../../routes/app_routes.dart';
 import '../../services/profile_image_service.dart';
@@ -449,7 +450,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 border: OutlineInputBorder(),
               ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 16),
+            const ProfileStatsCard(),
+            const SizedBox(height: 16),
             FilledButton.icon(
               onPressed: isSaving ? null : saveProfile,
               icon: const Icon(
