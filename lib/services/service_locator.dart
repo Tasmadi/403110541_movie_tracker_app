@@ -69,6 +69,7 @@ class ServiceLocator {
 
   static final HomePresenter homePresenter = HomePresenter(
     mediaRepository: mediaRepository,
+    userMediaRepository: userMediaRepository,
   );
 
   static final SearchPresenter searchPresenter = SearchPresenter(

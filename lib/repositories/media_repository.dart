@@ -2,6 +2,7 @@ import '../models/movie.dart';
 import '../models/search_result_item.dart';
 import '../services/api_service.dart';
 import '../models/movie_detail.dart';
+import '../models/user_media_item.dart';
 import '../models/season_detail.dart';
 import '../models/series_detail.dart';
 
@@ -17,6 +18,8 @@ class MediaRepository {
   Map<int, SeriesDetail> seriesDetailCache = {};
 
   Map<String, SeasonDetail> seasonDetailCache = {};
+
+  final Map<String, List<SearchResultItem>> homeMediaCache = {};
 
   MediaRepository({
     required this.apiService,
@@ -125,6 +128,233 @@ class MediaRepository {
     movieDetailCache[movieId] = movieDetail;
 
     return movieDetail;
+  }
+
+  List<SearchResultItem> parseHomeItems(
+    dynamic response,
+    String mediaType,
+  ) {
+    if (response is! Map<String, dynamic>) {
+      return [];
+    }
+
+    dynamic rawResults = response['results'];
+
+    if (rawResults is! List) {
+      return [];
+    }
+
+    List<SearchResultItem> items = [];
+
+    for (dynamic rawItem in rawResults) {
+      if (rawItem is! Map) {
+        continue;
+      }
+
+      Map<String, dynamic> json = Map<String, dynamic>.from(
+        rawItem,
+      );
+
+      json['media_type'] = mediaType;
+
+      items.add(
+        SearchResultItem.fromJson(
+          json,
+        ),
+      );
+    }
+
+    return items;
+  }
+
+  Future<List<SearchResultItem>> getHomeMediaList({
+    required String path,
+    required String mediaType,
+    required String cacheKey,
+    bool forceRefresh = false,
+  }) async {
+    if (!forceRefresh && homeMediaCache.containsKey(cacheKey)) {
+      return homeMediaCache[cacheKey]!;
+    }
+
+    dynamic response = await apiService.get(path);
+
+    List<SearchResultItem> items = parseHomeItems(
+      response,
+      mediaType,
+    );
+
+    homeMediaCache[cacheKey] = items;
+
+    return items;
+  }
+
+  Future<List<SearchResultItem>> getPopularMoviesForHome({
+    bool forceRefresh = false,
+  }) {
+    return getHomeMediaList(
+      path: '/movie/popular',
+      mediaType: 'movie',
+      cacheKey: 'popular_movies',
+      forceRefresh: forceRefresh,
+    );
+  }
+
+  Future<List<SearchResultItem>> getPopularSeriesForHome({
+    bool forceRefresh = false,
+  }) {
+    return getHomeMediaList(
+      path: '/tv/popular',
+      mediaType: 'tv',
+      cacheKey: 'popular_series',
+      forceRefresh: forceRefresh,
+    );
+  }
+
+  Future<List<SearchResultItem>> getNewMoviesForHome({
+    bool forceRefresh = false,
+  }) {
+    return getHomeMediaList(
+      path: '/movie/now_playing',
+      mediaType: 'movie',
+      cacheKey: 'new_movies',
+      forceRefresh: forceRefresh,
+    );
+  }
+
+  Future<List<SearchResultItem>> getNewSeriesForHome({
+    bool forceRefresh = false,
+  }) {
+    return getHomeMediaList(
+      path: '/tv/airing_today',
+      mediaType: 'tv',
+      cacheKey: 'new_series',
+      forceRefresh: forceRefresh,
+    );
+  }
+
+  Future<List<SearchResultItem>> getTopRatedMoviesForHome({
+    bool forceRefresh = false,
+  }) {
+    return getHomeMediaList(
+      path: '/movie/top_rated',
+      mediaType: 'movie',
+      cacheKey: 'top_rated_movies',
+      forceRefresh: forceRefresh,
+    );
+  }
+
+  Future<List<SearchResultItem>> getTopRatedSeriesForHome({
+    bool forceRefresh = false,
+  }) {
+    return getHomeMediaList(
+      path: '/tv/top_rated',
+      mediaType: 'tv',
+      cacheKey: 'top_rated_series',
+      forceRefresh: forceRefresh,
+    );
+  }
+
+  Future<List<SearchResultItem>> getTrendingForHome({
+    bool forceRefresh = false,
+  }) async {
+    const String cacheKey = 'trending_all';
+
+    if (!forceRefresh && homeMediaCache.containsKey(cacheKey)) {
+      return homeMediaCache[cacheKey]!;
+    }
+
+    dynamic response = await apiService.get(
+      '/trending/all/week',
+    );
+
+    if (response is! Map<String, dynamic>) {
+      return [];
+    }
+
+    dynamic rawResults = response['results'];
+
+    if (rawResults is! List) {
+      return [];
+    }
+
+    List<SearchResultItem> items = [];
+
+    for (dynamic rawItem in rawResults) {
+      if (rawItem is! Map) {
+        continue;
+      }
+
+      Map<String, dynamic> json = Map<String, dynamic>.from(
+        rawItem,
+      );
+
+      String mediaType = json['media_type'] ?? '';
+
+      if (mediaType != 'movie' && mediaType != 'tv') {
+        continue;
+      }
+
+      items.add(
+        SearchResultItem.fromJson(
+          json,
+        ),
+      );
+    }
+
+    homeMediaCache[cacheKey] = items;
+
+    return items;
+  }
+
+  Future<List<SearchResultItem>> getRecommendationsForHome({
+    required UserMediaItem? seed,
+    bool forceRefresh = false,
+  }) async {
+    if (seed == null) {
+      return getTrendingForHome(
+        forceRefresh: forceRefresh,
+      );
+    }
+
+    String cacheKey = 'recommendations_'
+        '${seed.mediaType}_'
+        '${seed.mediaId}';
+
+    if (!forceRefresh && homeMediaCache.containsKey(cacheKey)) {
+      return homeMediaCache[cacheKey]!;
+    }
+
+    try {
+      String path;
+
+      if (seed.isMovie) {
+        path = '/movie/${seed.mediaId}/recommendations';
+      } else {
+        path = '/tv/${seed.mediaId}/recommendations';
+      }
+
+      dynamic response = await apiService.get(path);
+
+      List<SearchResultItem> result = parseHomeItems(
+        response,
+        seed.mediaType,
+      );
+
+      if (result.isEmpty) {
+        return getTrendingForHome(
+          forceRefresh: forceRefresh,
+        );
+      }
+
+      homeMediaCache[cacheKey] = result;
+
+      return result;
+    } catch (_) {
+      return getTrendingForHome(
+        forceRefresh: forceRefresh,
+      );
+    }
   }
 
   Future<SeriesDetail> getSeriesDetail(

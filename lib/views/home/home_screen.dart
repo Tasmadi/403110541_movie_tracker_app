@@ -1,15 +1,17 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import '../../routes/app_routes.dart';
 
-import '../../models/movie.dart';
+import '../../models/home_data.dart';
+import '../../models/search_result_item.dart';
 import '../../presenters/home_presenter.dart';
+import '../../routes/app_routes.dart';
 import '../../services/service_locator.dart';
 import '../../utils/app_colors.dart';
-import '../../utils/app_strings.dart';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  const HomeScreen({
+    super.key,
+  });
 
   @override
   State<HomeScreen> createState() {
@@ -20,7 +22,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   late final HomePresenter presenter;
 
-  List<Movie> movies = [];
+  HomeData? homeData;
 
   bool isLoading = true;
 
@@ -32,19 +34,24 @@ class _HomeScreenState extends State<HomeScreen> {
 
     presenter = ServiceLocator.homePresenter;
 
-    loadMovies();
+    loadHome();
   }
 
-  Future<void> loadMovies({
+  Future<void> loadHome({
     bool forceRefresh = false,
   }) async {
+    if (!forceRefresh) {
+      setState(() {
+        isLoading = true;
+      });
+    }
+
     setState(() {
-      isLoading = true;
       errorMessage = null;
     });
 
     try {
-      List<Movie> result = await presenter.loadPopularMovies(
+      HomeData result = await presenter.loadHome(
         forceRefresh: forceRefresh,
       );
 
@@ -53,7 +60,7 @@ class _HomeScreenState extends State<HomeScreen> {
       }
 
       setState(() {
-        movies = result;
+        homeData = result;
         isLoading = false;
       });
     } catch (error) {
@@ -62,12 +69,12 @@ class _HomeScreenState extends State<HomeScreen> {
       }
 
       setState(() {
+        isLoading = false;
+
         errorMessage = error.toString().replaceFirst(
               'Exception: ',
               '',
             );
-
-        isLoading = false;
       });
     }
   }
@@ -77,7 +84,7 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text(
-          AppStrings.appName,
+          'ردیاب فیلم و سریال',
         ),
         actions: [
           IconButton(
@@ -87,7 +94,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 AppRoutes.search,
               );
             },
-            tooltip: 'جست‌وجو',
+            tooltip: 'جستجو',
             icon: const Icon(
               Icons.search_rounded,
             ),
@@ -125,16 +132,14 @@ class _HomeScreenState extends State<HomeScreen> {
             },
             tooltip: 'پروفایل',
             icon: const Icon(
-              Icons.account_circle_outlined,
+              Icons.person_outline_rounded,
             ),
           ),
         ],
       ),
-      body: SafeArea(
-        child: Directionality(
-          textDirection: TextDirection.rtl,
-          child: buildBody(),
-        ),
+      body: Directionality(
+        textDirection: TextDirection.rtl,
+        child: buildBody(),
       ),
     );
   }
@@ -146,126 +151,217 @@ class _HomeScreenState extends State<HomeScreen> {
       );
     }
 
-    if (errorMessage != null) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(
-                Icons.cloud_off_rounded,
-                size: 64,
-                color: AppColors.error,
-              ),
-              const SizedBox(height: 16),
-              Text(
-                errorMessage!,
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: 16,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-              const SizedBox(height: 20),
-              FilledButton.icon(
-                onPressed: () {
-                  loadMovies(
-                    forceRefresh: true,
-                  );
-                },
-                icon: const Icon(
-                  Icons.refresh_rounded,
-                ),
-                label: const Text(
-                  'تلاش دوباره',
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
+    if (errorMessage != null || homeData == null) {
+      return buildError();
     }
 
     return RefreshIndicator(
       onRefresh: () {
-        return loadMovies(
+        return loadHome(
           forceRefresh: true,
         );
       },
       child: ListView(
-        padding: const EdgeInsets.all(20),
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.only(
+          bottom: 28,
+        ),
         children: [
-          const Text(
-            'فیلم‌های محبوب',
-            style: TextStyle(
-              color: AppColors.textPrimary,
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-            ),
+          buildHeader(),
+          buildSection(
+            title: 'محبوب‌ترین فیلم‌ها',
+            icon: Icons.local_fire_department_rounded,
+            items: homeData!.popularMovies,
           ),
-          const SizedBox(height: 6),
-          const Text(
-            'محبوب‌ترین فیلم‌های IMDb',
-            style: TextStyle(
-              color: AppColors.textSecondary,
-              fontSize: 14,
-            ),
+          buildSection(
+            title: 'محبوب‌ترین سریال‌ها',
+            icon: Icons.tv_rounded,
+            items: homeData!.popularSeries,
           ),
-          const SizedBox(height: 20),
-          GridView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: movies.length,
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              childAspectRatio: 0.58,
-              crossAxisSpacing: 14,
-              mainAxisSpacing: 18,
-            ),
-            itemBuilder: (context, index) {
-              Movie movie = movies[index];
-
-              return buildMovieCard(movie);
-            },
+          buildSection(
+            title: 'تازه‌ها',
+            icon: Icons.auto_awesome_rounded,
+            items: homeData!.newReleases,
+          ),
+          buildSection(
+            title: 'بالاترین امتیاز',
+            icon: Icons.star_rounded,
+            items: homeData!.topRated,
+          ),
+          buildSection(
+            title: 'پیشنهاد برای شما',
+            icon: Icons.recommend_rounded,
+            items: homeData!.recommendations,
           ),
         ],
       ),
     );
   }
 
-  Widget buildMovieCard(Movie movie) {
-    return InkWell(
-        onTap: () {
-          Navigator.pushNamed(
-            context,
-            AppRoutes.movieDetail,
-            arguments: movie.id,
-          );
-        },
-        borderRadius: BorderRadius.circular(12),
-        child: Card(
-          clipBehavior: Clip.antiAlias,
+  Widget buildHeader() {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(
+        16,
+        16,
+        16,
+        8,
+      ),
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: AppColors.primary.withOpacity(0.10),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: const Row(
+        children: [
+          CircleAvatar(
+            radius: 27,
+            backgroundColor: AppColors.primary,
+            child: Icon(
+              Icons.movie_filter_rounded,
+              color: Colors.white,
+              size: 28,
+            ),
+          ),
+          SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'چی ببینیم؟',
+                  style: TextStyle(
+                    fontSize: 21,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                SizedBox(height: 4),
+                Text(
+                  'فیلم‌ها و سریال‌های محبوب را پیدا و دنبال کن.',
+                  style: TextStyle(
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget buildSection({
+    required String title,
+    required IconData icon,
+    required List<SearchResultItem> items,
+  }) {
+    if (items.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return Padding(
+      padding: const EdgeInsets.only(
+        top: 18,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: 16,
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  icon,
+                  color: AppColors.primary,
+                  size: 22,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 19,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            height: 285,
+            child: ListView.separated(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 16,
+              ),
+              scrollDirection: Axis.horizontal,
+              itemCount: items.length,
+              separatorBuilder: (
+                context,
+                index,
+              ) {
+                return const SizedBox(
+                  width: 12,
+                );
+              },
+              itemBuilder: (
+                context,
+                index,
+              ) {
+                return buildMediaCard(
+                  items[index],
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget buildMediaCard(
+    SearchResultItem item,
+  ) {
+    return SizedBox(
+      width: 145,
+      child: Card(
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: () {
+            Navigator.pushNamed(
+              context,
+              item.isMovie ? AppRoutes.movieDetail : AppRoutes.seriesDetail,
+              arguments: item.id,
+            );
+          },
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(
-                child: movie.posterUrl.isEmpty
-                    ? const Center(
-                        child: Icon(
+              SizedBox(
+                width: double.infinity,
+                height: 198,
+                child: item.posterUrl.isEmpty
+                    ? Container(
+                        color: const Color(
+                          0xFFE8E8EE,
+                        ),
+                        child: const Icon(
                           Icons.movie_rounded,
-                          size: 48,
+                          size: 45,
+                          color: AppColors.textSecondary,
                         ),
                       )
                     : CachedNetworkImage(
-                        imageUrl: movie.posterUrl,
+                        imageUrl: item.posterUrl,
                         fit: BoxFit.cover,
                         placeholder: (
                           context,
                           url,
                         ) {
                           return const Center(
-                            child: CircularProgressIndicator(),
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                            ),
                           );
                         },
                         errorWidget: (
@@ -273,56 +369,119 @@ class _HomeScreenState extends State<HomeScreen> {
                           url,
                           error,
                         ) {
-                          return const Center(
-                            child: Icon(
-                              Icons.broken_image_rounded,
-                              size: 48,
-                            ),
+                          return const Icon(
+                            Icons.broken_image_outlined,
                           );
                         },
                       ),
               ),
-              Padding(
-                padding: const EdgeInsets.all(10),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      movie.title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      textDirection: TextDirection.ltr,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 15,
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.all(
+                    9,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        item.title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        textDirection: TextDirection.ltr,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        const Icon(
-                          Icons.star_rounded,
-                          color: AppColors.secondary,
-                          size: 18,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          movie.voteAverage.toStringAsFixed(1),
-                        ),
-                        const Spacer(),
-                        Text(
-                          movie.releaseYear,
-                          style: const TextStyle(
-                            color: AppColors.textSecondary,
+                      const SizedBox(
+                        height: 5,
+                      ),
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons.star_rounded,
+                            size: 15,
+                            color: AppColors.secondary,
                           ),
-                        ),
-                      ],
-                    ),
-                  ],
+                          const SizedBox(
+                            width: 3,
+                          ),
+                          Text(
+                            item.voteAverage.toStringAsFixed(
+                              1,
+                            ),
+                            style: const TextStyle(
+                              fontSize: 11,
+                            ),
+                          ),
+                          const Spacer(),
+                          Text(
+                            item.releaseYear,
+                            style: const TextStyle(
+                              color: AppColors.textSecondary,
+                              fontSize: 11,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ],
           ),
-        ));
+        ),
+      ),
+    );
+  }
+
+  Widget buildError() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(30),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(
+              Icons.wifi_off_rounded,
+              size: 60,
+              color: AppColors.textSecondary,
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'دریافت اطلاعات صفحه اصلی با خطا مواجه شد.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            if (errorMessage != null) ...[
+              const SizedBox(height: 8),
+              Text(
+                errorMessage!,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: AppColors.textSecondary,
+                ),
+              ),
+            ],
+            const SizedBox(height: 20),
+            FilledButton.icon(
+              onPressed: () {
+                loadHome(
+                  forceRefresh: true,
+                );
+              },
+              icon: const Icon(
+                Icons.refresh_rounded,
+              ),
+              label: const Text(
+                'تلاش دوباره',
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

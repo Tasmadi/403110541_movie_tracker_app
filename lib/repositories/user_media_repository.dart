@@ -113,6 +113,34 @@ class UserMediaRepository {
     );
   }
 
+  Future<UserMediaItem?> getRecommendationSeed() async {
+    if (isGuest()) {
+      return null;
+    }
+
+    int userId = await getUserId();
+
+    Database db = await databaseService.getDatabase();
+
+    List<Map<String, dynamic>> rows = await db.query(
+      'user_media',
+      where: 'user_id = ?',
+      whereArgs: [
+        userId,
+      ],
+      orderBy: 'is_favorite DESC, updated_at DESC',
+      limit: 1,
+    );
+
+    if (rows.isEmpty) {
+      return null;
+    }
+
+    return UserMediaItem.fromMap(
+      rows.first,
+    );
+  }
+
   Future<UserMediaItem?> toggleFavorite({
     required int mediaId,
     required String mediaType,
