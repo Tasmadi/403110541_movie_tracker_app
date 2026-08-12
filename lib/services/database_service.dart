@@ -18,7 +18,7 @@ class DatabaseService {
 
     database = await openDatabase(
       path,
-      version: 5,
+      version: 6,
       onCreate: (
         Database db,
         int version,
@@ -46,6 +46,10 @@ class DatabaseService {
 
         if (oldVersion < 5) {
           await createReviewsTable(db);
+        }
+
+        if (oldVersion < 6) {
+          await createCustomListsTables(db);
         }
       },
     );
@@ -81,6 +85,8 @@ class DatabaseService {
     await createRatingsTable(db);
 
     await createReviewsTable(db);
+
+    await createCustomListsTables(db);
   }
 
   Future<void> createUserMediaTable(
@@ -167,6 +173,39 @@ class DatabaseService {
         created_at TEXT NOT NULL,
         updated_at TEXT NOT NULL,
         UNIQUE(user_id, media_id, media_type)
+      )
+      ''',
+    );
+  }
+
+  Future<void> createCustomListsTables(
+    Database db,
+  ) async {
+    await db.execute(
+      '''
+      CREATE TABLE custom_lists (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        name TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        UNIQUE(user_id, name)
+      )
+      ''',
+    );
+
+    await db.execute(
+      '''
+      CREATE TABLE custom_list_items (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        list_id INTEGER NOT NULL,
+        media_id INTEGER NOT NULL,
+        media_type TEXT NOT NULL,
+        title TEXT NOT NULL,
+        poster_path TEXT,
+        release_year TEXT NOT NULL DEFAULT '',
+        added_at TEXT NOT NULL,
+        UNIQUE(list_id, media_id, media_type)
       )
       ''',
     );

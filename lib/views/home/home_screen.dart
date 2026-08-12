@@ -108,6 +108,18 @@ class _HomeScreenState extends State<HomeScreen> {
             onPressed: () {
               Navigator.pushNamed(
                 context,
+                AppRoutes.customLists,
+              );
+            },
+            tooltip: 'فهرست‌های شخصی',
+            icon: const Icon(
+              Icons.playlist_play_rounded,
+            ),
+          ),
+          IconButton(
+            onPressed: () {
+              Navigator.pushNamed(
+                context,
                 AppRoutes.profile,
               );
             },

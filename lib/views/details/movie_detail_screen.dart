@@ -1,5 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:movie_tracker_app/routes/app_routes.dart';
 
 import '../../models/cast_member.dart';
 import '../../models/movie_detail.dart';
@@ -9,6 +10,7 @@ import '../../widgets/review_panel.dart';
 import '../../widgets/rating_panel.dart';
 import '../../utils/app_colors.dart';
 import '../../widgets/media_action_panel.dart';
+import '../../models/custom_list_media_arguments.dart';
 
 class MovieDetailScreen extends StatefulWidget {
   final int movieId;
@@ -164,6 +166,32 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
             title: currentMovie.title,
             posterPath: currentMovie.posterPath,
             releaseYear: currentMovie.releaseYear,
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: 20,
+            ),
+            child: OutlinedButton.icon(
+              onPressed: () {
+                Navigator.pushNamed(
+                  context,
+                  AppRoutes.customListPicker,
+                  arguments: CustomListMediaArguments(
+                    mediaId: currentMovie.id,
+                    mediaType: 'movie',
+                    title: currentMovie.title,
+                    posterPath: currentMovie.posterPath,
+                    releaseYear: currentMovie.releaseYear,
+                  ),
+                );
+              },
+              icon: const Icon(
+                Icons.playlist_add_rounded,
+              ),
+              label: const Text(
+                'افزودن به فهرست شخصی',
+              ),
+            ),
           ),
           RatingPanel(
             mediaId: currentMovie.id,

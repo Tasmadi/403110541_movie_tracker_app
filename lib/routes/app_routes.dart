@@ -22,4 +22,10 @@ class AppRoutes {
   static const String profile = '/profile';
 
   static const String watchlist = '/watchlist';
+
+  static const String customLists = '/custom-lists';
+
+  static const String customListPicker = '/custom-list-picker';
+
+  static const String customListDetail = '/custom-list-detail';
 }

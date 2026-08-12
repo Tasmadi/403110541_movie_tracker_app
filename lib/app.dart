@@ -12,6 +12,11 @@ import 'views/details/season_detail_screen.dart';
 import 'views/details/series_detail_screen.dart';
 import 'views/auth/auth_welcome_screen.dart';
 import 'views/profile/profile_screen.dart';
+import 'models/custom_list_detail_arguments.dart';
+import 'models/custom_list_media_arguments.dart';
+import 'views/lists/custom_list_detail_screen.dart';
+import 'views/lists/custom_list_picker_screen.dart';
+import 'views/lists/custom_lists_screen.dart';
 import 'views/auth/login_screen.dart';
 import 'views/watchlist/watchlist_screen.dart';
 import 'views/auth/register_screen.dart';
@@ -51,6 +56,9 @@ class MovieTrackerApp extends StatelessWidget {
         AppRoutes.watchlist: (context) {
           return const WatchlistScreen();
         },
+        AppRoutes.customLists: (context) {
+          return const CustomListsScreen();
+        },
       },
       onGenerateRoute: (settings) {
         if (settings.name == AppRoutes.movieDetail) {
@@ -88,6 +96,34 @@ class MovieTrackerApp extends StatelessWidget {
             return MaterialPageRoute(
               builder: (context) {
                 return SeasonDetailScreen(
+                  arguments: arguments,
+                );
+              },
+            );
+          }
+        }
+
+        if (settings.name == AppRoutes.customListPicker) {
+          Object? arguments = settings.arguments;
+
+          if (arguments is CustomListMediaArguments) {
+            return MaterialPageRoute(
+              builder: (context) {
+                return CustomListPickerScreen(
+                  media: arguments,
+                );
+              },
+            );
+          }
+        }
+
+        if (settings.name == AppRoutes.customListDetail) {
+          Object? arguments = settings.arguments;
+
+          if (arguments is CustomListDetailArguments) {
+            return MaterialPageRoute(
+              builder: (context) {
+                return CustomListDetailScreen(
                   arguments: arguments,
                 );
               },

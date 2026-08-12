@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../../models/cast_member.dart';
 import '../../models/season.dart';
 import '../../widgets/review_panel.dart';
+import '../../models/custom_list_media_arguments.dart';
 import '../../models/season_arguments.dart';
 import '../../models/series_detail.dart';
 import '../../widgets/rating_panel.dart';
@@ -289,6 +290,32 @@ class _SeriesDetailScreenState extends State<SeriesDetailScreen> {
             title: item.name,
             posterPath: item.posterPath,
             releaseYear: item.firstAirYear,
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: 20,
+            ),
+            child: OutlinedButton.icon(
+              onPressed: () {
+                Navigator.pushNamed(
+                  context,
+                  AppRoutes.customListPicker,
+                  arguments: CustomListMediaArguments(
+                    mediaId: item.id,
+                    mediaType: 'tv',
+                    title: item.name,
+                    posterPath: item.posterPath,
+                    releaseYear: item.firstAirYear,
+                  ),
+                );
+              },
+              icon: const Icon(
+                Icons.playlist_add_rounded,
+              ),
+              label: const Text(
+                'افزودن به فهرست شخصی',
+              ),
+            ),
           ),
           RatingPanel(
             mediaId: item.id,

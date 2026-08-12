@@ -10,6 +10,8 @@ import 'api_service.dart';
 import 'profile_image_service.dart';
 import 'database_service.dart';
 import '../presenters/episode_progress_presenter.dart';
+import '../presenters/custom_list_presenter.dart';
+import '../repositories/custom_list_repository.dart';
 import '../presenters/rating_presenter.dart';
 import '../presenters/review_presenter.dart';
 import '../repositories/review_repository.dart';
@@ -111,4 +113,13 @@ class ServiceLocator {
   static Future<void> initialize() async {
     await databaseService.getDatabase();
   }
+
+  static final CustomListRepository customListRepository = CustomListRepository(
+    databaseService: databaseService,
+    sessionService: sessionService,
+  );
+
+  static final CustomListPresenter customListPresenter = CustomListPresenter(
+    repository: customListRepository,
+  );
 }
