@@ -3,14 +3,18 @@ import 'dart:async';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
+import '../../models/search_page_result.dart';
 import '../../models/search_result_item.dart';
+import '../../models/search_type.dart';
 import '../../presenters/search_presenter.dart';
+import '../../routes/app_routes.dart';
 import '../../services/service_locator.dart';
 import '../../utils/app_colors.dart';
-import '../../routes/app_routes.dart';
 
 class SearchScreen extends StatefulWidget {
-  const SearchScreen({super.key});
+  const SearchScreen({
+    super.key,
+  });
 
   @override
   State<SearchScreen> createState() {
@@ -23,13 +27,23 @@ class _SearchScreenState extends State<SearchScreen> {
 
   final TextEditingController searchController = TextEditingController();
 
+  final ScrollController scrollController = ScrollController();
+
   Timer? debounceTimer;
 
   List<SearchResultItem> results = [];
 
+  SearchType selectedSearchType = SearchType.title;
+
   bool isLoading = false;
 
+  bool isLoadingMore = false;
+
   bool hasSearched = false;
+
+  bool hasMore = false;
+
+  int currentPage = 1;
 
   String? errorMessage;
 
@@ -38,26 +52,57 @@ class _SearchScreenState extends State<SearchScreen> {
     super.initState();
 
     presenter = ServiceLocator.searchPresenter;
+
+    scrollController.addListener(
+      onScroll,
+    );
   }
 
   @override
   void dispose() {
     debounceTimer?.cancel();
+
+    scrollController.removeListener(
+      onScroll,
+    );
+
+    scrollController.dispose();
     searchController.dispose();
 
     super.dispose();
   }
 
-  void onSearchChanged(String value) {
+  void onScroll() {
+    if (!scrollController.hasClients) {
+      return;
+    }
+
+    double currentPosition = scrollController.position.pixels;
+
+    double maxPosition = scrollController.position.maxScrollExtent;
+
+    if (currentPosition >= maxPosition - 300) {
+      loadMore();
+    }
+  }
+
+  void onSearchChanged(
+    String value,
+  ) {
     debounceTimer?.cancel();
 
     String query = value.trim();
+
+    setState(() {});
 
     if (query.isEmpty) {
       setState(() {
         results = [];
         isLoading = false;
+        isLoadingMore = false;
         hasSearched = false;
+        hasMore = false;
+        currentPage = 1;
         errorMessage = null;
       });
 
@@ -65,22 +110,66 @@ class _SearchScreenState extends State<SearchScreen> {
     }
 
     debounceTimer = Timer(
-      const Duration(milliseconds: 500),
+      const Duration(
+        milliseconds: 500,
+      ),
       () {
-        search(query);
+        search(
+          query,
+        );
       },
     );
   }
 
-  Future<void> search(String query) async {
+  void changeSearchType(
+    SearchType type,
+  ) {
+    if (selectedSearchType == type) {
+      return;
+    }
+
+    debounceTimer?.cancel();
+
+    FocusScope.of(context).unfocus();
+
+    setState(() {
+      selectedSearchType = type;
+      results = [];
+      hasSearched = false;
+      hasMore = false;
+      currentPage = 1;
+      errorMessage = null;
+    });
+
+    String query = searchController.text.trim();
+
+    if (query.isNotEmpty) {
+      search(
+        query,
+      );
+    }
+  }
+
+  Future<void> search(
+    String query,
+  ) async {
+    SearchType requestType = selectedSearchType;
+
     setState(() {
       isLoading = true;
+      isLoadingMore = false;
       hasSearched = true;
+      hasMore = false;
+      currentPage = 1;
       errorMessage = null;
     });
 
     try {
-      List<SearchResultItem> searchResults = await presenter.search(query);
+      SearchPageResult pageResult = await presenter.searchPage(
+        query: query,
+        searchType: requestType,
+        page: 1,
+      );
 
       if (!mounted) {
         return;
@@ -90,8 +179,17 @@ class _SearchScreenState extends State<SearchScreen> {
         return;
       }
 
+      if (selectedSearchType != requestType) {
+        return;
+      }
+
       setState(() {
-        results = searchResults;
+        results = pageResult.items;
+
+        currentPage = pageResult.page;
+
+        hasMore = pageResult.hasMore;
+
         isLoading = false;
       });
     } catch (error) {
@@ -103,9 +201,16 @@ class _SearchScreenState extends State<SearchScreen> {
         return;
       }
 
+      if (selectedSearchType != requestType) {
+        return;
+      }
+
       setState(() {
         results = [];
+
         isLoading = false;
+
+        hasMore = false;
 
         errorMessage = error.toString().replaceFirst(
               'Exception: ',
@@ -115,8 +220,111 @@ class _SearchScreenState extends State<SearchScreen> {
     }
   }
 
+  Future<void> loadMore() async {
+    if (isLoading || isLoadingMore || !hasMore) {
+      return;
+    }
+
+    String query = searchController.text.trim();
+
+    if (query.isEmpty) {
+      return;
+    }
+
+    SearchType requestType = selectedSearchType;
+
+    int nextPage = currentPage + 1;
+
+    setState(() {
+      isLoadingMore = true;
+    });
+
+    try {
+      SearchPageResult pageResult = await presenter.searchPage(
+        query: query,
+        searchType: requestType,
+        page: nextPage,
+      );
+
+      if (!mounted) {
+        return;
+      }
+
+      if (searchController.text.trim() != query) {
+        return;
+      }
+
+      if (selectedSearchType != requestType) {
+        return;
+      }
+
+      Map<String, SearchResultItem> uniqueItems = {};
+
+      for (SearchResultItem item in results) {
+        String key = '${item.mediaType}_${item.id}';
+
+        uniqueItems[key] = item;
+      }
+
+      for (SearchResultItem item in pageResult.items) {
+        String key = '${item.mediaType}_${item.id}';
+
+        uniqueItems[key] = item;
+      }
+
+      setState(() {
+        results = uniqueItems.values.toList();
+
+        currentPage = pageResult.page;
+
+        hasMore = pageResult.hasMore;
+
+        isLoadingMore = false;
+      });
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        isLoadingMore = false;
+      });
+
+      String message = error.toString().replaceFirst(
+            'Exception: ',
+            '',
+          );
+
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(
+        SnackBar(
+          content: Text(
+            message,
+          ),
+        ),
+      );
+    }
+  }
+
+  void submitSearch() {
+    debounceTimer?.cancel();
+
+    String query = searchController.text.trim();
+
+    if (query.isEmpty) {
+      return;
+    }
+
+    search(
+      query,
+    );
+  }
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(
+    BuildContext context,
+  ) {
     return Scaffold(
       appBar: AppBar(
         title: const Text(
@@ -128,13 +336,79 @@ class _SearchScreenState extends State<SearchScreen> {
           textDirection: TextDirection.rtl,
           child: Column(
             children: [
-              buildSearchField(),
+              buildSearchControls(),
               Expanded(
                 child: buildBody(),
               ),
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget buildSearchControls() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        buildSearchTypes(),
+        buildSearchField(),
+      ],
+    );
+  }
+
+  Widget buildSearchTypes() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        16,
+        12,
+        16,
+        0,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'جست‌وجو بر اساس',
+            style: TextStyle(
+              color: AppColors.textSecondary,
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(
+            height: 8,
+          ),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: SearchType.values.map(
+                (
+                  SearchType type,
+                ) {
+                  bool selected = selectedSearchType == type;
+
+                  return Padding(
+                    padding: const EdgeInsets.only(
+                      left: 8,
+                    ),
+                    child: ChoiceChip(
+                      label: Text(
+                        type.title,
+                      ),
+                      selected: selected,
+                      onSelected: (_) {
+                        changeSearchType(
+                          type,
+                        );
+                      },
+                    ),
+                  );
+                },
+              ).toList(),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -150,9 +424,16 @@ class _SearchScreenState extends State<SearchScreen> {
       child: TextField(
         controller: searchController,
         onChanged: onSearchChanged,
+        onSubmitted: (_) {
+          submitSearch();
+        },
+        keyboardType: selectedSearchType == SearchType.year
+            ? TextInputType.number
+            : TextInputType.text,
         textInputAction: TextInputAction.search,
+        textDirection: TextDirection.ltr,
         decoration: InputDecoration(
-          hintText: 'نام فیلم یا سریال را وارد کنید',
+          hintText: selectedSearchType.hint,
           prefixIcon: const Icon(
             Icons.search_rounded,
           ),
@@ -160,15 +441,22 @@ class _SearchScreenState extends State<SearchScreen> {
               ? null
               : IconButton(
                   onPressed: () {
+                    debounceTimer?.cancel();
+
                     searchController.clear();
-                    onSearchChanged('');
+
+                    onSearchChanged(
+                      '',
+                    );
                   },
                   icon: const Icon(
                     Icons.close_rounded,
                   ),
                 ),
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(18),
+            borderRadius: BorderRadius.circular(
+              18,
+            ),
           ),
         ),
       ),
@@ -185,7 +473,9 @@ class _SearchScreenState extends State<SearchScreen> {
     if (errorMessage != null) {
       return Center(
         child: Padding(
-          padding: const EdgeInsets.all(24),
+          padding: const EdgeInsets.all(
+            24,
+          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -194,7 +484,9 @@ class _SearchScreenState extends State<SearchScreen> {
                 size: 64,
                 color: AppColors.error,
               ),
-              const SizedBox(height: 16),
+              const SizedBox(
+                height: 16,
+              ),
               Text(
                 errorMessage!,
                 textAlign: TextAlign.center,
@@ -203,13 +495,17 @@ class _SearchScreenState extends State<SearchScreen> {
                   fontSize: 16,
                 ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(
+                height: 20,
+              ),
               FilledButton.icon(
                 onPressed: () {
                   String query = searchController.text.trim();
 
                   if (query.isNotEmpty) {
-                    search(query);
+                    search(
+                      query,
+                    );
                   }
                 },
                 icon: const Icon(
@@ -226,25 +522,40 @@ class _SearchScreenState extends State<SearchScreen> {
     }
 
     if (!hasSearched) {
-      return const Center(
+      return Center(
         child: Padding(
-          padding: EdgeInsets.all(24),
+          padding: const EdgeInsets.all(
+            24,
+          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(
+              const Icon(
                 Icons.manage_search_rounded,
                 size: 80,
                 color: AppColors.textSecondary,
               ),
-              SizedBox(height: 18),
-              Text(
+              const SizedBox(
+                height: 18,
+              ),
+              const Text(
                 'فیلم یا سریال موردنظر خود را جست‌وجو کنید',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   color: AppColors.textPrimary,
                   fontSize: 17,
                   fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(
+                height: 10,
+              ),
+              Text(
+                'نوع جست‌وجو: ${selectedSearchType.title}',
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: AppColors.textSecondary,
+                  fontSize: 13,
                 ),
               ),
             ],
@@ -256,7 +567,9 @@ class _SearchScreenState extends State<SearchScreen> {
     if (results.isEmpty) {
       return const Center(
         child: Padding(
-          padding: EdgeInsets.all(24),
+          padding: EdgeInsets.all(
+            24,
+          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -265,7 +578,9 @@ class _SearchScreenState extends State<SearchScreen> {
                 size: 72,
                 color: AppColors.textSecondary,
               ),
-              SizedBox(height: 16),
+              SizedBox(
+                height: 16,
+              ),
               Text(
                 'نتیجه‌ای پیدا نشد',
                 style: TextStyle(
@@ -281,18 +596,37 @@ class _SearchScreenState extends State<SearchScreen> {
     }
 
     return ListView.separated(
-      padding: const EdgeInsets.all(16),
-      itemCount: results.length,
+      controller: scrollController,
+      padding: const EdgeInsets.fromLTRB(
+        16,
+        16,
+        16,
+        24,
+      ),
+      itemCount: results.length + (isLoadingMore ? 1 : 0),
       separatorBuilder: (
         context,
         index,
       ) {
-        return const SizedBox(height: 12);
+        return const SizedBox(
+          height: 12,
+        );
       },
       itemBuilder: (
         context,
         index,
       ) {
+        if (index >= results.length) {
+          return const Padding(
+            padding: EdgeInsets.symmetric(
+              vertical: 20,
+            ),
+            child: Center(
+              child: CircularProgressIndicator(),
+            ),
+          );
+        }
+
         return buildResultCard(
           results[index],
         );
@@ -332,11 +666,15 @@ class _SearchScreenState extends State<SearchScreen> {
               SizedBox(
                 width: 100,
                 height: double.infinity,
-                child: buildPoster(item),
+                child: buildPoster(
+                  item,
+                ),
               ),
               Expanded(
                 child: Padding(
-                  padding: const EdgeInsets.all(12),
+                  padding: const EdgeInsets.all(
+                    12,
+                  ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -351,12 +689,18 @@ class _SearchScreenState extends State<SearchScreen> {
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(
+                        height: 8,
+                      ),
                       Row(
                         children: [
-                          buildTypeBadge(item),
+                          buildTypeBadge(
+                            item,
+                          ),
                           if (item.releaseYear.isNotEmpty) ...[
-                            const SizedBox(width: 8),
+                            const SizedBox(
+                              width: 8,
+                            ),
                             Text(
                               item.releaseYear,
                               style: const TextStyle(
@@ -366,7 +710,9 @@ class _SearchScreenState extends State<SearchScreen> {
                           ],
                         ],
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(
+                        height: 8,
+                      ),
                       Row(
                         children: [
                           const Icon(
@@ -374,13 +720,19 @@ class _SearchScreenState extends State<SearchScreen> {
                             color: AppColors.secondary,
                             size: 18,
                           ),
-                          const SizedBox(width: 4),
+                          const SizedBox(
+                            width: 4,
+                          ),
                           Text(
-                            item.voteAverage.toStringAsFixed(1),
+                            item.voteAverage.toStringAsFixed(
+                              1,
+                            ),
                           ),
                         ],
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(
+                        height: 8,
+                      ),
                       Expanded(
                         child: Text(
                           item.overview.isEmpty
@@ -457,8 +809,12 @@ class _SearchScreenState extends State<SearchScreen> {
         vertical: 4,
       ),
       decoration: BoxDecoration(
-        color: AppColors.primary.withOpacity(0.12),
-        borderRadius: BorderRadius.circular(10),
+        color: AppColors.primary.withOpacity(
+          0.12,
+        ),
+        borderRadius: BorderRadius.circular(
+          10,
+        ),
       ),
       child: Text(
         item.mediaTypeTitle,

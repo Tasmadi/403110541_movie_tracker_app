@@ -3,6 +3,8 @@ import '../models/search_result_item.dart';
 import '../services/api_service.dart';
 import '../models/movie_detail.dart';
 import '../models/user_media_item.dart';
+import '../models/search_page_result.dart';
+import '../models/search_type.dart';
 import '../models/season_detail.dart';
 import '../models/series_detail.dart';
 
@@ -11,7 +13,13 @@ class MediaRepository {
 
   List<Movie>? popularMoviesCache;
 
-  Map<String, List<SearchResultItem>> searchCache = {};
+  final Map<String, SearchPageResult> searchPageCache = {};
+
+  final Map<String, List<SearchResultItem>> personCreditsCache = {};
+
+  Map<String, int>? _movieGenreCache;
+
+  Map<String, int>? _tvGenreCache;
 
   Map<int, MovieDetail> movieDetailCache = {};
 
@@ -56,46 +64,549 @@ class MediaRepository {
     String query, {
     bool forceRefresh = false,
   }) async {
+    SearchPageResult result = await searchMediaPage(
+      query: query,
+      searchType: SearchType.title,
+      page: 1,
+      forceRefresh: forceRefresh,
+    );
+
+    return result.items;
+  }
+
+  Future<SearchPageResult> searchMediaPage({
+    required String query,
+    required SearchType searchType,
+    int page = 1,
+    bool forceRefresh = false,
+  }) async {
     String normalizedQuery = query.trim();
 
     if (normalizedQuery.isEmpty) {
-      return [];
+      return SearchPageResult(
+        items: [],
+        page: 1,
+        totalPages: 1,
+      );
     }
 
-    String cacheKey = normalizedQuery.toLowerCase();
+    int safePage = page < 1 ? 1 : page;
 
-    if (!forceRefresh && searchCache.containsKey(cacheKey)) {
-      return searchCache[cacheKey]!;
+    String cacheKey = '${searchType.index}_'
+        '${normalizedQuery.toLowerCase()}_'
+        '$safePage';
+
+    if (!forceRefresh &&
+        searchPageCache.containsKey(
+          cacheKey,
+        )) {
+      return searchPageCache[cacheKey]!;
     }
 
+    SearchPageResult result;
+
+    switch (searchType) {
+      case SearchType.title:
+        result = await _searchByTitle(
+          normalizedQuery,
+          safePage,
+        );
+        break;
+
+      case SearchType.actor:
+        result = await _searchByPerson(
+          normalizedQuery,
+          safePage,
+          isDirector: false,
+        );
+        break;
+
+      case SearchType.director:
+        result = await _searchByPerson(
+          normalizedQuery,
+          safePage,
+          isDirector: true,
+        );
+        break;
+
+      case SearchType.genre:
+        result = await _searchByGenre(
+          normalizedQuery,
+          safePage,
+        );
+        break;
+
+      case SearchType.year:
+        result = await _searchByYear(
+          normalizedQuery,
+          safePage,
+        );
+        break;
+    }
+
+    searchPageCache[cacheKey] = result;
+
+    return result;
+  }
+
+  Future<SearchPageResult> _searchByTitle(
+    String query,
+    int page,
+  ) async {
     Map<String, dynamic> response = await apiService.get(
       '/search/multi',
       queryParameters: {
-        'query': normalizedQuery,
-        'page': '1',
+        'query': query,
+        'page': page.toString(),
         'include_adult': 'false',
       },
     );
 
-    List<dynamic> results = response['results'] ?? [];
+    return _parseApiPage(
+      response,
+    );
+  }
 
-    List<SearchResultItem> items = results.where((item) {
-      if (item is! Map<String, dynamic>) {
-        return false;
+  Future<SearchPageResult> _searchByPerson(
+    String query,
+    int page, {
+    required bool isDirector,
+  }) async {
+    String personCacheKey = '${isDirector ? 'director' : 'actor'}_'
+        '${query.toLowerCase()}';
+
+    List<SearchResultItem>? cachedCredits = personCreditsCache[personCacheKey];
+
+    if (cachedCredits == null) {
+      Map<String, dynamic> personResponse = await apiService.get(
+        '/search/person',
+        queryParameters: {
+          'query': query,
+          'page': '1',
+          'include_adult': 'false',
+        },
+      );
+
+      List<dynamic> people = personResponse['results'] ?? [];
+
+      if (people.isEmpty) {
+        return SearchPageResult(
+          items: [],
+          page: 1,
+          totalPages: 1,
+        );
       }
 
-      String mediaType = item['media_type'] ?? '';
+      Map<String, dynamic>? selectedPerson;
 
-      return mediaType == 'movie' || mediaType == 'tv';
-    }).map((item) {
-      return SearchResultItem.fromJson(
-        item as Map<String, dynamic>,
+      String expectedDepartment = isDirector ? 'Directing' : 'Acting';
+
+      for (dynamic rawPerson in people) {
+        if (rawPerson is! Map<String, dynamic>) {
+          continue;
+        }
+
+        if (rawPerson['known_for_department'] == expectedDepartment) {
+          selectedPerson = rawPerson;
+
+          break;
+        }
+      }
+
+      selectedPerson ??= Map<String, dynamic>.from(
+        people.first as Map,
       );
-    }).toList();
 
-    searchCache[cacheKey] = items;
+      int personId = selectedPerson['id'] as int;
 
-    return items;
+      Map<String, dynamic> creditsResponse = await apiService.get(
+        '/person/$personId/combined_credits',
+      );
+
+      List<dynamic> rawCredits = isDirector
+          ? creditsResponse['crew'] ?? []
+          : creditsResponse['cast'] ?? [];
+
+      Map<String, SearchResultItem> uniqueItems = {};
+
+      for (dynamic rawCredit in rawCredits) {
+        if (rawCredit is! Map) {
+          continue;
+        }
+
+        Map<String, dynamic> json = Map<String, dynamic>.from(
+          rawCredit,
+        );
+
+        String mediaType = json['media_type'] ?? '';
+
+        if (mediaType != 'movie' && mediaType != 'tv') {
+          continue;
+        }
+
+        if (isDirector &&
+            !_isDirectorCredit(
+              json,
+            )) {
+          continue;
+        }
+
+        int? id = json['id'] as int?;
+
+        if (id == null) {
+          continue;
+        }
+
+        String key = '${mediaType}_$id';
+
+        uniqueItems[key] = SearchResultItem.fromJson(
+          json,
+        );
+      }
+
+      cachedCredits = uniqueItems.values.toList();
+
+      personCreditsCache[personCacheKey] = cachedCredits;
+    }
+
+    return _paginateLocalResults(
+      cachedCredits,
+      page,
+    );
+  }
+
+  bool _isDirectorCredit(
+    Map<String, dynamic> json,
+  ) {
+    if (json['job'] == 'Director') {
+      return true;
+    }
+
+    if (json['department'] == 'Directing') {
+      return true;
+    }
+
+    dynamic jobs = json['jobs'];
+
+    if (jobs is List) {
+      for (dynamic rawJob in jobs) {
+        if (rawJob is Map && rawJob['job'] == 'Director') {
+          return true;
+        }
+      }
+    }
+
+    return false;
+  }
+
+  Future<SearchPageResult> _searchByGenre(
+    String query,
+    int page,
+  ) async {
+    await _loadGenreCaches();
+
+    String normalizedGenre = query.trim().toLowerCase();
+
+    int? movieGenreId = _findGenreId(
+      _movieGenreCache!,
+      normalizedGenre,
+    );
+
+    int? tvGenreId = _findGenreId(
+      _tvGenreCache!,
+      normalizedGenre,
+    );
+
+    if (movieGenreId == null && tvGenreId == null) {
+      throw Exception(
+        'ژانر واردشده پیدا نشد. نام ژانر را به انگلیسی وارد کنید.',
+      );
+    }
+
+    SearchPageResult moviePage = SearchPageResult(
+      items: [],
+      page: page,
+      totalPages: 1,
+    );
+
+    SearchPageResult tvPage = SearchPageResult(
+      items: [],
+      page: page,
+      totalPages: 1,
+    );
+
+    if (movieGenreId != null) {
+      Map<String, dynamic> response = await apiService.get(
+        '/discover/movie',
+        queryParameters: {
+          'with_genres': movieGenreId.toString(),
+          'page': page.toString(),
+          'include_adult': 'false',
+          'sort_by': 'popularity.desc',
+        },
+      );
+
+      moviePage = _parseApiPage(
+        response,
+        forcedMediaType: 'movie',
+      );
+    }
+
+    if (tvGenreId != null) {
+      Map<String, dynamic> response = await apiService.get(
+        '/discover/tv',
+        queryParameters: {
+          'with_genres': tvGenreId.toString(),
+          'page': page.toString(),
+          'include_adult': 'false',
+          'sort_by': 'popularity.desc',
+        },
+      );
+
+      tvPage = _parseApiPage(
+        response,
+        forcedMediaType: 'tv',
+      );
+    }
+
+    return _combinePages(
+      moviePage,
+      tvPage,
+      page,
+    );
+  }
+
+  Future<SearchPageResult> _searchByYear(
+    String query,
+    int page,
+  ) async {
+    int? year = int.tryParse(
+      query,
+    );
+
+    if (year == null || year < 1000 || year > 9999) {
+      throw Exception(
+        'سال انتشار را به‌صورت چهاررقمی وارد کنید.',
+      );
+    }
+
+    List<Map<String, dynamic>> responses =
+        await Future.wait<Map<String, dynamic>>([
+      apiService.get(
+        '/discover/movie',
+        queryParameters: {
+          'primary_release_year': year.toString(),
+          'page': page.toString(),
+          'include_adult': 'false',
+          'sort_by': 'popularity.desc',
+        },
+      ),
+      apiService.get(
+        '/discover/tv',
+        queryParameters: {
+          'first_air_date_year': year.toString(),
+          'page': page.toString(),
+          'include_adult': 'false',
+          'sort_by': 'popularity.desc',
+        },
+      ),
+    ]);
+
+    SearchPageResult moviePage = _parseApiPage(
+      responses[0],
+      forcedMediaType: 'movie',
+    );
+
+    SearchPageResult tvPage = _parseApiPage(
+      responses[1],
+      forcedMediaType: 'tv',
+    );
+
+    return _combinePages(
+      moviePage,
+      tvPage,
+      page,
+    );
+  }
+
+  Future<void> _loadGenreCaches() async {
+    if (_movieGenreCache != null && _tvGenreCache != null) {
+      return;
+    }
+
+    List<Map<String, dynamic>> responses =
+        await Future.wait<Map<String, dynamic>>([
+      apiService.get(
+        '/genre/movie/list',
+      ),
+      apiService.get(
+        '/genre/tv/list',
+      ),
+    ]);
+
+    _movieGenreCache = _parseGenreMap(
+      responses[0],
+    );
+
+    _tvGenreCache = _parseGenreMap(
+      responses[1],
+    );
+  }
+
+  Map<String, int> _parseGenreMap(
+    Map<String, dynamic> response,
+  ) {
+    List<dynamic> genres = response['genres'] ?? [];
+
+    Map<String, int> result = {};
+
+    for (dynamic rawGenre in genres) {
+      if (rawGenre is! Map<String, dynamic>) {
+        continue;
+      }
+
+      String name = (rawGenre['name'] ?? '').toString().trim().toLowerCase();
+
+      int? id = rawGenre['id'] as int?;
+
+      if (name.isNotEmpty && id != null) {
+        result[name] = id;
+      }
+    }
+
+    return result;
+  }
+
+  int? _findGenreId(
+    Map<String, int> genres,
+    String query,
+  ) {
+    if (genres.containsKey(query)) {
+      return genres[query];
+    }
+
+    for (MapEntry<String, int> entry in genres.entries) {
+      if (entry.key.contains(
+            query,
+          ) ||
+          query.contains(
+            entry.key,
+          )) {
+        return entry.value;
+      }
+    }
+
+    return null;
+  }
+
+  SearchPageResult _parseApiPage(
+    Map<String, dynamic> response, {
+    String? forcedMediaType,
+  }) {
+    List<dynamic> rawResults = response['results'] ?? [];
+
+    List<SearchResultItem> items = [];
+
+    for (dynamic rawItem in rawResults) {
+      if (rawItem is! Map) {
+        continue;
+      }
+
+      Map<String, dynamic> json = Map<String, dynamic>.from(
+        rawItem,
+      );
+
+      if (forcedMediaType != null) {
+        json['media_type'] = forcedMediaType;
+      }
+
+      String mediaType = json['media_type'] ?? '';
+
+      if (mediaType != 'movie' && mediaType != 'tv') {
+        continue;
+      }
+
+      items.add(
+        SearchResultItem.fromJson(
+          json,
+        ),
+      );
+    }
+
+    int currentPage = (response['page'] as num?)?.toInt() ?? 1;
+
+    int totalPages = (response['total_pages'] as num?)?.toInt() ?? 1;
+
+    if (totalPages < 1) {
+      totalPages = 1;
+    }
+
+    return SearchPageResult(
+      items: items,
+      page: currentPage,
+      totalPages: totalPages,
+    );
+  }
+
+  SearchPageResult _combinePages(
+    SearchPageResult first,
+    SearchPageResult second,
+    int page,
+  ) {
+    Map<String, SearchResultItem> uniqueItems = {};
+
+    for (SearchResultItem item in [
+      ...first.items,
+      ...second.items,
+    ]) {
+      String key = '${item.mediaType}_${item.id}';
+
+      uniqueItems[key] = item;
+    }
+
+    int totalPages = first.totalPages > second.totalPages
+        ? first.totalPages
+        : second.totalPages;
+
+    return SearchPageResult(
+      items: uniqueItems.values.toList(),
+      page: page,
+      totalPages: totalPages,
+    );
+  }
+
+  SearchPageResult _paginateLocalResults(
+    List<SearchResultItem> items,
+    int page,
+  ) {
+    const int pageSize = 20;
+
+    int totalPages = items.isEmpty ? 1 : (items.length / pageSize).ceil();
+
+    int start = (page - 1) * pageSize;
+
+    if (start >= items.length) {
+      return SearchPageResult(
+        items: [],
+        page: page,
+        totalPages: totalPages,
+      );
+    }
+
+    int end = start + pageSize;
+
+    if (end > items.length) {
+      end = items.length;
+    }
+
+    return SearchPageResult(
+      items: items.sublist(
+        start,
+        end,
+      ),
+      page: page,
+      totalPages: totalPages,
+    );
   }
 
   Future<MovieDetail> getMovieDetail(
@@ -409,9 +920,17 @@ class MediaRepository {
 
   void clearCache() {
     popularMoviesCache = null;
-    searchCache.clear();
+
+    searchPageCache.clear();
+    personCreditsCache.clear();
+
     movieDetailCache.clear();
     seriesDetailCache.clear();
     seasonDetailCache.clear();
+
+    homeMediaCache.clear();
+
+    _movieGenreCache = null;
+    _tvGenreCache = null;
   }
 }
