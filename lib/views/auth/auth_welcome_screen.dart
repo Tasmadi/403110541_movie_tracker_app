@@ -4,7 +4,8 @@ import '../../presenters/auth_presenter.dart';
 import '../../routes/app_routes.dart';
 import '../../services/service_locator.dart';
 import '../../utils/app_colors.dart';
-import '../../utils/app_strings.dart';
+import '../../widgets/app_logo.dart';
+import '../../widgets/cinema_background.dart';
 
 class AuthWelcomeScreen extends StatefulWidget {
   const AuthWelcomeScreen({
@@ -34,132 +35,299 @@ class _AuthWelcomeScreenState extends State<AuthWelcomeScreen> {
       isLoading = true;
     });
 
-    await presenter.continueAsGuest();
+    try {
+      await presenter.continueAsGuest();
 
-    if (!mounted) {
-      return;
+      if (!mounted) {
+        return;
+      }
+
+      Navigator.pushNamedAndRemoveUntil(
+        context,
+        AppRoutes.home,
+        (route) {
+          return false;
+        },
+      );
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            error.toString().replaceFirst(
+                  'Exception: ',
+                  '',
+                ),
+          ),
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+        });
+      }
     }
-
-    Navigator.pushNamedAndRemoveUntil(
-      context,
-      AppRoutes.home,
-      (route) {
-        return false;
-      },
-    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SafeArea(
-        child: Directionality(
-          textDirection: TextDirection.rtl,
-          child: Padding(
-            padding: const EdgeInsets.all(28),
-            child: Column(
-              children: [
-                const Spacer(),
-                Container(
-                  width: 100,
-                  height: 100,
-                  decoration: BoxDecoration(
-                    color: AppColors.primary.withOpacity(0.12),
-                    borderRadius: BorderRadius.circular(
-                      28,
+      body: CinemaBackground(
+        child: SafeArea(
+          child: Directionality(
+            textDirection: TextDirection.rtl,
+            child: LayoutBuilder(
+              builder: (
+                context,
+                constraints,
+              ) {
+                return SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(
+                    24,
+                    30,
+                    24,
+                    28,
+                  ),
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      minHeight: constraints.maxHeight - 58,
                     ),
-                  ),
-                  child: const Icon(
-                    Icons.movie_filter_rounded,
-                    size: 54,
-                    color: AppColors.primary,
-                  ),
-                ),
-                const SizedBox(height: 26),
-                const Text(
-                  AppStrings.appName,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: AppColors.textPrimary,
-                    fontSize: 27,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                const Text(
-                  'فیلم‌ها و سریال‌های موردعلاقه خود را دنبال کنید',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: AppColors.textSecondary,
-                    fontSize: 15,
-                    height: 1.6,
-                  ),
-                ),
-                const Spacer(),
-                SizedBox(
-                  width: double.infinity,
-                  child: FilledButton(
-                    onPressed: isLoading
-                        ? null
-                        : () {
-                            Navigator.pushNamed(
-                              context,
-                              AppRoutes.login,
-                            );
-                          },
-                    child: const Padding(
-                      padding: EdgeInsets.symmetric(
-                        vertical: 14,
-                      ),
-                      child: Text(
-                        'ورود',
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                SizedBox(
-                  width: double.infinity,
-                  child: OutlinedButton(
-                    onPressed: isLoading
-                        ? null
-                        : () {
-                            Navigator.pushNamed(
-                              context,
-                              AppRoutes.register,
-                            );
-                          },
-                    child: const Padding(
-                      padding: EdgeInsets.symmetric(
-                        vertical: 14,
-                      ),
-                      child: Text(
-                        'ایجاد حساب کاربری',
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                TextButton(
-                  onPressed: isLoading ? null : continueAsGuest,
-                  child: isLoading
-                      ? const SizedBox(
-                          width: 22,
-                          height: 22,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                          ),
-                        )
-                      : const Text(
-                          'ادامه به عنوان مهمان',
+                    child: Column(
+                      children: [
+                        const SizedBox(
+                          height: 30,
                         ),
-                ),
-                const SizedBox(height: 14),
-              ],
+                        const AppLogo(
+                          size: 125,
+                        ),
+                        const SizedBox(
+                          height: 38,
+                        ),
+                        const Text(
+                          'دنیای فیلم و سریال خودت',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: AppColors.textPrimary,
+                            fontSize: 24,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                        const SizedBox(
+                          height: 10,
+                        ),
+                        const Text(
+                          'آثاری که می‌بینی را دنبال کن، امتیاز بده و همه‌چیز را در یک جا نگه دار.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: AppColors.textSecondary,
+                            fontSize: 14,
+                            height: 1.8,
+                          ),
+                        ),
+                        const SizedBox(
+                          height: 30,
+                        ),
+                        buildFeatures(),
+                        const SizedBox(
+                          height: 42,
+                        ),
+                        buildActions(),
+                      ],
+                    ),
+                  ),
+                );
+              },
             ),
           ),
         ),
       ),
+    );
+  }
+
+  Widget buildFeatures() {
+    return Container(
+      padding: const EdgeInsets.all(
+        16,
+      ),
+      decoration: BoxDecoration(
+        color: AppColors.surface.withOpacity(
+          0.82,
+        ),
+        borderRadius: BorderRadius.circular(
+          22,
+        ),
+        border: Border.all(
+          color: AppColors.border,
+        ),
+      ),
+      child: const Row(
+        children: [
+          Expanded(
+            child: _FeatureItem(
+              icon: Icons.play_circle_outline_rounded,
+              title: 'ردیابی',
+            ),
+          ),
+          _FeatureDivider(),
+          Expanded(
+            child: _FeatureItem(
+              icon: Icons.star_outline_rounded,
+              title: 'امتیاز',
+            ),
+          ),
+          _FeatureDivider(),
+          Expanded(
+            child: _FeatureItem(
+              icon: Icons.bookmark_border_rounded,
+              title: 'لیست‌ها',
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget buildActions() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        SizedBox(
+          height: 54,
+          child: FilledButton.icon(
+            onPressed: isLoading
+                ? null
+                : () {
+                    Navigator.pushNamed(
+                      context,
+                      AppRoutes.login,
+                    );
+                  },
+            icon: const Icon(
+              Icons.login_rounded,
+            ),
+            label: const Text(
+              'ورود به حساب',
+            ),
+          ),
+        ),
+        const SizedBox(
+          height: 12,
+        ),
+        SizedBox(
+          height: 54,
+          child: OutlinedButton.icon(
+            onPressed: isLoading
+                ? null
+                : () {
+                    Navigator.pushNamed(
+                      context,
+                      AppRoutes.register,
+                    );
+                  },
+            icon: const Icon(
+              Icons.person_add_alt_1_rounded,
+            ),
+            label: const Text(
+              'ایجاد حساب کاربری',
+            ),
+          ),
+        ),
+        const SizedBox(
+          height: 14,
+        ),
+        TextButton.icon(
+          onPressed: isLoading ? null : continueAsGuest,
+          icon: isLoading
+              ? const SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                  ),
+                )
+              : const Icon(
+                  Icons.visibility_outlined,
+                ),
+          label: Text(
+            isLoading ? 'در حال ورود...' : 'ادامه به عنوان مهمان',
+          ),
+        ),
+        const SizedBox(
+          height: 8,
+        ),
+        const Text(
+          'در حالت مهمان می‌توانید فیلم‌ها و سریال‌ها را جست‌وجو و مشاهده کنید.',
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            color: AppColors.textMuted,
+            fontSize: 11,
+            height: 1.6,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _FeatureItem extends StatelessWidget {
+  final IconData icon;
+  final String title;
+
+  const _FeatureItem({
+    required this.icon,
+    required this.title,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Container(
+          width: 42,
+          height: 42,
+          decoration: BoxDecoration(
+            color: AppColors.primary.withOpacity(
+              0.12,
+            ),
+            borderRadius: BorderRadius.circular(
+              13,
+            ),
+          ),
+          child: Icon(
+            icon,
+            color: AppColors.primaryLight,
+            size: 22,
+          ),
+        ),
+        const SizedBox(
+          height: 8,
+        ),
+        Text(
+          title,
+          style: const TextStyle(
+            color: AppColors.textSecondary,
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _FeatureDivider extends StatelessWidget {
+  const _FeatureDivider();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 1,
+      height: 50,
+      color: AppColors.divider,
     );
   }
 }

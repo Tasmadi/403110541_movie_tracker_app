@@ -4,6 +4,8 @@ import 'package:flutter/services.dart';
 import '../../presenters/password_reset_presenter.dart';
 import '../../routes/app_routes.dart';
 import '../../services/service_locator.dart';
+import '../../utils/app_colors.dart';
+import '../../widgets/cinema_background.dart';
 
 class VerifyResetCodeScreen extends StatefulWidget {
   final String email;
@@ -149,118 +151,252 @@ class _VerifyResetCodeScreenState extends State<VerifyResetCodeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          'تأیید کد',
-        ),
-      ),
-      body: Directionality(
-        textDirection: TextDirection.rtl,
+      body: CinemaBackground(
         child: SafeArea(
-          child: Center(
+          child: Directionality(
+            textDirection: TextDirection.rtl,
             child: SingleChildScrollView(
-              padding: const EdgeInsets.all(
-                24,
+              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+              padding: const EdgeInsets.fromLTRB(
+                22,
+                8,
+                22,
+                30,
               ),
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const Icon(
-                    Icons.verified_user_outlined,
-                    size: 78,
-                  ),
+                  buildBackButton(),
                   const SizedBox(
-                    height: 20,
+                    height: 42,
+                  ),
+                  buildIcon(),
+                  const SizedBox(
+                    height: 22,
                   ),
                   const Text(
-                    'کد ارسال‌شده را وارد کنید',
+                    'تأیید کد بازیابی',
+                    textAlign: TextAlign.center,
                     style: TextStyle(
-                      fontSize: 19,
-                      fontWeight: FontWeight.bold,
+                      color: AppColors.textPrimary,
+                      fontSize: 24,
+                      fontWeight: FontWeight.w800,
                     ),
                   ),
                   const SizedBox(
-                    height: 8,
+                    height: 9,
                   ),
-                  Text(
-                    widget.email,
-                    textDirection: TextDirection.ltr,
+                  const Text(
+                    'کد ۶ رقمی ارسال‌شده به ایمیل زیر را وارد کنید',
                     textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: AppColors.textSecondary,
+                      fontSize: 13,
+                    ),
                   ),
+                  const SizedBox(
+                    height: 14,
+                  ),
+                  buildEmailBadge(),
                   const SizedBox(
                     height: 28,
                   ),
-                  TextField(
-                    controller: codeController,
-                    autofocus: true,
-                    keyboardType: TextInputType.number,
-                    textDirection: TextDirection.ltr,
-                    textAlign: TextAlign.center,
-                    maxLength: 6,
-                    inputFormatters: [
-                      FilteringTextInputFormatter.digitsOnly,
-                    ],
-                    style: const TextStyle(
-                      fontSize: 28,
-                      letterSpacing: 8,
-                      fontWeight: FontWeight.bold,
-                    ),
-                    decoration: const InputDecoration(
-                      labelText: 'کد بازیابی',
-                      border: OutlineInputBorder(),
-                      counterText: '',
-                    ),
-                    onSubmitted: (_) {
-                      if (!isLoading) {
-                        verifyCode();
-                      }
-                    },
-                  ),
-                  const SizedBox(
-                    height: 20,
-                  ),
-                  SizedBox(
-                    width: double.infinity,
-                    child: FilledButton.icon(
-                      onPressed: isLoading ? null : verifyCode,
-                      icon: isLoading
-                          ? const SizedBox(
-                              width: 18,
-                              height: 18,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                              ),
-                            )
-                          : const Icon(
-                              Icons.check_rounded,
-                            ),
-                      label: const Text(
-                        'تأیید کد',
-                      ),
-                    ),
-                  ),
-                  const SizedBox(
-                    height: 10,
-                  ),
-                  TextButton(
-                    onPressed: isResending ? null : resendCode,
-                    child: Text(
-                      isResending ? 'در حال ارسال...' : 'ارسال مجدد کد',
-                    ),
-                  ),
-                  const SizedBox(
-                    height: 6,
-                  ),
-                  const Text(
-                    'کد بازیابی ۱۰ دقیقه اعتبار دارد.',
-                    style: TextStyle(
-                      fontSize: 12,
-                    ),
-                  ),
+                  buildVerificationCard(),
                 ],
               ),
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget buildBackButton() {
+    return Align(
+      alignment: Alignment.centerRight,
+      child: Container(
+        decoration: BoxDecoration(
+          color: AppColors.surface.withOpacity(
+            0.75,
+          ),
+          borderRadius: BorderRadius.circular(
+            14,
+          ),
+          border: Border.all(
+            color: AppColors.border,
+          ),
+        ),
+        child: IconButton(
+          onPressed: isLoading
+              ? null
+              : () {
+                  Navigator.maybePop(
+                    context,
+                  );
+                },
+          icon: const Icon(
+            Icons.arrow_forward_rounded,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget buildIcon() {
+    return Center(
+      child: Container(
+        width: 88,
+        height: 88,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: AppColors.primary.withOpacity(
+            0.13,
+          ),
+          border: Border.all(
+            color: AppColors.primary.withOpacity(
+              0.35,
+            ),
+          ),
+        ),
+        child: const Icon(
+          Icons.verified_user_outlined,
+          size: 42,
+          color: AppColors.primaryLight,
+        ),
+      ),
+    );
+  }
+
+  Widget buildEmailBadge() {
+    return Center(
+      child: Container(
+        padding: const EdgeInsets.symmetric(
+          horizontal: 14,
+          vertical: 8,
+        ),
+        decoration: BoxDecoration(
+          color: AppColors.surfaceLight,
+          borderRadius: BorderRadius.circular(
+            20,
+          ),
+          border: Border.all(
+            color: AppColors.border,
+          ),
+        ),
+        child: Text(
+          widget.email,
+          textDirection: TextDirection.ltr,
+          style: const TextStyle(
+            color: AppColors.textSecondary,
+            fontSize: 12,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget buildVerificationCard() {
+    return Container(
+      padding: const EdgeInsets.all(
+        18,
+      ),
+      decoration: BoxDecoration(
+        color: AppColors.surface.withOpacity(
+          0.93,
+        ),
+        borderRadius: BorderRadius.circular(
+          24,
+        ),
+        border: Border.all(
+          color: AppColors.border,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          TextField(
+            controller: codeController,
+            autofocus: true,
+            keyboardType: TextInputType.number,
+            textDirection: TextDirection.ltr,
+            textAlign: TextAlign.center,
+            maxLength: 6,
+            inputFormatters: [
+              FilteringTextInputFormatter.digitsOnly,
+            ],
+            style: const TextStyle(
+              color: AppColors.textPrimary,
+              fontSize: 28,
+              letterSpacing: 10,
+              fontWeight: FontWeight.w800,
+            ),
+            decoration: const InputDecoration(
+              hintText: '••••••',
+              counterText: '',
+            ),
+            onSubmitted: (_) {
+              if (!isLoading) {
+                verifyCode();
+              }
+            },
+          ),
+          const SizedBox(
+            height: 14,
+          ),
+          SizedBox(
+            height: 54,
+            child: FilledButton.icon(
+              onPressed: isLoading ? null : verifyCode,
+              icon: isLoading
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
+                  : const Icon(
+                      Icons.check_rounded,
+                    ),
+              label: Text(
+                isLoading ? 'در حال بررسی...' : 'تأیید کد',
+              ),
+            ),
+          ),
+          const SizedBox(
+            height: 12,
+          ),
+          TextButton.icon(
+            onPressed: isResending ? null : resendCode,
+            icon: isResending
+                ? const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                    ),
+                  )
+                : const Icon(
+                    Icons.refresh_rounded,
+                    size: 18,
+                  ),
+            label: Text(
+              isResending ? 'در حال ارسال...' : 'ارسال مجدد کد',
+            ),
+          ),
+          const SizedBox(
+            height: 4,
+          ),
+          const Text(
+            'این کد تا ۱۰ دقیقه معتبر است.',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: AppColors.textMuted,
+              fontSize: 11,
+            ),
+          ),
+        ],
       ),
     );
   }

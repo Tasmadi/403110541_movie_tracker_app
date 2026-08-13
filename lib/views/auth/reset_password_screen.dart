@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import '../../presenters/password_reset_presenter.dart';
 import '../../routes/app_routes.dart';
 import '../../services/service_locator.dart';
+import '../../utils/app_colors.dart';
+import '../../widgets/cinema_background.dart';
 
 class ResetPasswordScreen extends StatefulWidget {
   final String email;
@@ -68,7 +70,9 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
         return;
       }
 
-      ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
+      ScaffoldMessengerState messenger = ScaffoldMessenger.of(
+        context,
+      );
 
       Navigator.pushNamedAndRemoveUntil(
         context,
@@ -110,133 +114,245 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          'رمز عبور جدید',
-        ),
-      ),
-      body: Directionality(
-        textDirection: TextDirection.rtl,
+      body: CinemaBackground(
         child: SafeArea(
-          child: Center(
+          child: Directionality(
+            textDirection: TextDirection.rtl,
             child: SingleChildScrollView(
-              padding: const EdgeInsets.all(
-                24,
+              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+              padding: const EdgeInsets.fromLTRB(
+                22,
+                8,
+                22,
+                30,
               ),
-              child: Form(
-                key: formKey,
-                child: Column(
-                  children: [
-                    const Icon(
-                      Icons.lock_reset_rounded,
-                      size: 78,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  buildBackButton(),
+                  const SizedBox(
+                    height: 42,
+                  ),
+                  buildIcon(),
+                  const SizedBox(
+                    height: 22,
+                  ),
+                  const Text(
+                    'رمز عبور جدید',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: AppColors.textPrimary,
+                      fontSize: 24,
+                      fontWeight: FontWeight.w800,
                     ),
-                    const SizedBox(
-                      height: 20,
+                  ),
+                  const SizedBox(
+                    height: 9,
+                  ),
+                  const Text(
+                    'یک رمز عبور جدید و امن برای حساب خود تعیین کنید.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: AppColors.textSecondary,
+                      fontSize: 13,
+                      height: 1.7,
                     ),
-                    const Text(
-                      'رمز عبور جدید را تعیین کنید',
-                      style: TextStyle(
-                        fontSize: 19,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(
-                      height: 28,
-                    ),
-                    TextFormField(
-                      controller: passwordController,
-                      obscureText: obscurePassword,
-                      textDirection: TextDirection.ltr,
-                      decoration: InputDecoration(
-                        labelText: 'رمز عبور جدید',
-                        prefixIcon: const Icon(
-                          Icons.lock_outline,
-                        ),
-                        suffixIcon: IconButton(
-                          onPressed: () {
-                            setState(() {
-                              obscurePassword = !obscurePassword;
-                            });
-                          },
-                          icon: Icon(
-                            obscurePassword
-                                ? Icons.visibility_rounded
-                                : Icons.visibility_off_rounded,
-                          ),
-                        ),
-                        border: const OutlineInputBorder(),
-                      ),
-                      validator: (value) {
-                        if (value == null || value.length < 8) {
-                          return 'رمز عبور باید حداقل ۸ کاراکتر باشد.';
-                        }
-
-                        return null;
-                      },
-                    ),
-                    const SizedBox(
-                      height: 16,
-                    ),
-                    TextFormField(
-                      controller: confirmController,
-                      obscureText: obscureConfirm,
-                      textDirection: TextDirection.ltr,
-                      decoration: InputDecoration(
-                        labelText: 'تکرار رمز عبور جدید',
-                        prefixIcon: const Icon(
-                          Icons.lock_outline,
-                        ),
-                        suffixIcon: IconButton(
-                          onPressed: () {
-                            setState(() {
-                              obscureConfirm = !obscureConfirm;
-                            });
-                          },
-                          icon: Icon(
-                            obscureConfirm
-                                ? Icons.visibility_rounded
-                                : Icons.visibility_off_rounded,
-                          ),
-                        ),
-                        border: const OutlineInputBorder(),
-                      ),
-                      validator: (value) {
-                        if (value != passwordController.text) {
-                          return 'رمزهای عبور یکسان نیستند.';
-                        }
-
-                        return null;
-                      },
-                    ),
-                    const SizedBox(
-                      height: 22,
-                    ),
-                    SizedBox(
-                      width: double.infinity,
-                      child: FilledButton.icon(
-                        onPressed: isLoading ? null : resetPassword,
-                        icon: isLoading
-                            ? const SizedBox(
-                                width: 18,
-                                height: 18,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                ),
-                              )
-                            : const Icon(
-                                Icons.check_circle_outline_rounded,
-                              ),
-                        label: const Text(
-                          'تغییر رمز عبور',
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+                  ),
+                  const SizedBox(
+                    height: 28,
+                  ),
+                  buildForm(),
+                ],
               ),
             ),
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget buildBackButton() {
+    return Align(
+      alignment: Alignment.centerRight,
+      child: Container(
+        decoration: BoxDecoration(
+          color: AppColors.surface.withOpacity(
+            0.75,
+          ),
+          borderRadius: BorderRadius.circular(
+            14,
+          ),
+          border: Border.all(
+            color: AppColors.border,
+          ),
+        ),
+        child: IconButton(
+          onPressed: isLoading
+              ? null
+              : () {
+                  Navigator.maybePop(
+                    context,
+                  );
+                },
+          icon: const Icon(
+            Icons.arrow_forward_rounded,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget buildIcon() {
+    return Center(
+      child: Container(
+        width: 88,
+        height: 88,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: AppColors.primary.withOpacity(
+            0.13,
+          ),
+          border: Border.all(
+            color: AppColors.primary.withOpacity(
+              0.35,
+            ),
+          ),
+        ),
+        child: const Icon(
+          Icons.lock_reset_rounded,
+          color: AppColors.primaryLight,
+          size: 42,
+        ),
+      ),
+    );
+  }
+
+  Widget buildForm() {
+    return Container(
+      padding: const EdgeInsets.all(
+        18,
+      ),
+      decoration: BoxDecoration(
+        color: AppColors.surface.withOpacity(
+          0.93,
+        ),
+        borderRadius: BorderRadius.circular(
+          24,
+        ),
+        border: Border.all(
+          color: AppColors.border,
+        ),
+      ),
+      child: Form(
+        key: formKey,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            TextFormField(
+              controller: passwordController,
+              obscureText: obscurePassword,
+              textDirection: TextDirection.ltr,
+              textInputAction: TextInputAction.next,
+              decoration: InputDecoration(
+                labelText: 'رمز عبور جدید',
+                prefixIcon: const Icon(
+                  Icons.lock_outline_rounded,
+                ),
+                suffixIcon: IconButton(
+                  onPressed: () {
+                    setState(() {
+                      obscurePassword = !obscurePassword;
+                    });
+                  },
+                  icon: Icon(
+                    obscurePassword
+                        ? Icons.visibility_outlined
+                        : Icons.visibility_off_outlined,
+                  ),
+                ),
+              ),
+              validator: (value) {
+                if (value == null || value.length < 8) {
+                  return 'رمز عبور باید حداقل ۸ کاراکتر باشد.';
+                }
+
+                return null;
+              },
+            ),
+            const SizedBox(
+              height: 14,
+            ),
+            TextFormField(
+              controller: confirmController,
+              obscureText: obscureConfirm,
+              textDirection: TextDirection.ltr,
+              textInputAction: TextInputAction.done,
+              onFieldSubmitted: (_) {
+                if (!isLoading) {
+                  resetPassword();
+                }
+              },
+              decoration: InputDecoration(
+                labelText: 'تکرار رمز عبور جدید',
+                prefixIcon: const Icon(
+                  Icons.lock_outline_rounded,
+                ),
+                suffixIcon: IconButton(
+                  onPressed: () {
+                    setState(() {
+                      obscureConfirm = !obscureConfirm;
+                    });
+                  },
+                  icon: Icon(
+                    obscureConfirm
+                        ? Icons.visibility_outlined
+                        : Icons.visibility_off_outlined,
+                  ),
+                ),
+              ),
+              validator: (value) {
+                if (value != passwordController.text) {
+                  return 'رمزهای عبور یکسان نیستند.';
+                }
+
+                return null;
+              },
+            ),
+            const SizedBox(
+              height: 12,
+            ),
+            const Text(
+              'رمز عبور باید حداقل ۸ کاراکتر داشته باشد.',
+              style: TextStyle(
+                color: AppColors.textMuted,
+                fontSize: 11,
+              ),
+            ),
+            const SizedBox(
+              height: 22,
+            ),
+            SizedBox(
+              height: 54,
+              child: FilledButton.icon(
+                onPressed: isLoading ? null : resetPassword,
+                icon: isLoading
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Icon(
+                        Icons.check_circle_outline_rounded,
+                      ),
+                label: Text(
+                  isLoading ? 'در حال تغییر...' : 'تغییر رمز عبور',
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );

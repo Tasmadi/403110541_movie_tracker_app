@@ -4,6 +4,8 @@ import '../../presenters/auth_presenter.dart';
 import '../../routes/app_routes.dart';
 import '../../services/service_locator.dart';
 import '../../utils/app_colors.dart';
+import '../../widgets/app_logo.dart';
+import '../../widgets/cinema_background.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({
@@ -35,9 +37,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   late final AuthPresenter presenter;
 
   bool obscurePassword = true;
-
   bool obscureConfirmPassword = true;
-
   bool isLoading = false;
 
   @override
@@ -82,7 +82,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
       r'^[a-zA-Z0-9_]+$',
     );
 
-    if (!usernamePattern.hasMatch(username)) {
+    if (!usernamePattern.hasMatch(
+      username,
+    )) {
       return 'نام کاربری فقط می‌تواند شامل حروف انگلیسی، عدد و _ باشد.';
     }
 
@@ -98,7 +100,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
       r'^[^@\s]+@[^@\s]+\.[^@\s]+$',
     );
 
-    if (!emailPattern.hasMatch(email)) {
+    if (!emailPattern.hasMatch(
+      email,
+    )) {
       return 'ایمیل معتبر وارد کنید.';
     }
 
@@ -161,14 +165,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
         return;
       }
 
-      String message = error.toString().replaceFirst(
-            'Exception: ',
-            '',
-          );
-
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(message),
+          content: Text(
+            error.toString().replaceFirst(
+                  'Exception: ',
+                  '',
+                ),
+          ),
         ),
       );
     } finally {
@@ -183,182 +187,317 @@ class _RegisterScreenState extends State<RegisterScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          'ثبت‌نام',
-        ),
-      ),
-      body: SafeArea(
-        child: Directionality(
-          textDirection: TextDirection.rtl,
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(
-              24,
-            ),
-            child: Form(
-              key: formKey,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  const Icon(
-                    Icons.person_add_alt_1_rounded,
-                    size: 70,
-                    color: AppColors.primary,
+      body: CinemaBackground(
+        child: SafeArea(
+          child: Directionality(
+            textDirection: TextDirection.rtl,
+            child: LayoutBuilder(
+              builder: (
+                context,
+                constraints,
+              ) {
+                return SingleChildScrollView(
+                  keyboardDismissBehavior:
+                      ScrollViewKeyboardDismissBehavior.onDrag,
+                  padding: const EdgeInsets.fromLTRB(
+                    22,
+                    8,
+                    22,
+                    30,
                   ),
-                  const SizedBox(height: 20),
-                  const Text(
-                    'ایجاد حساب کاربری',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 25,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 28),
-                  TextFormField(
-                    controller: fullNameController,
-                    validator: validateFullName,
-                    decoration: const InputDecoration(
-                      labelText: 'نام و نام خانوادگی',
-                      prefixIcon: Icon(
-                        Icons.person_outline,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      buildTopBar(),
+                      const SizedBox(
+                        height: 10,
                       ),
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
-                  const SizedBox(height: 14),
-                  TextFormField(
-                    controller: usernameController,
-                    validator: validateUsername,
-                    textDirection: TextDirection.ltr,
-                    decoration: const InputDecoration(
-                      labelText: 'نام کاربری',
-                      prefixIcon: Icon(
-                        Icons.alternate_email,
-                      ),
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
-                  const SizedBox(height: 14),
-                  TextFormField(
-                    controller: emailController,
-                    validator: validateEmail,
-                    keyboardType: TextInputType.emailAddress,
-                    textDirection: TextDirection.ltr,
-                    decoration: const InputDecoration(
-                      labelText: 'ایمیل',
-                      prefixIcon: Icon(
-                        Icons.email_outlined,
-                      ),
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
-                  const SizedBox(height: 14),
-                  TextFormField(
-                    controller: passwordController,
-                    validator: validatePassword,
-                    obscureText: obscurePassword,
-                    textDirection: TextDirection.ltr,
-                    decoration: InputDecoration(
-                      labelText: 'رمز عبور',
-                      prefixIcon: const Icon(
-                        Icons.lock_outline,
-                      ),
-                      border: const OutlineInputBorder(),
-                      suffixIcon: IconButton(
-                        onPressed: () {
-                          setState(() {
-                            obscurePassword = !obscurePassword;
-                          });
-                        },
-                        icon: Icon(
-                          obscurePassword
-                              ? Icons.visibility
-                              : Icons.visibility_off,
+                      const Center(
+                        child: AppLogo(
+                          size: 72,
+                          showTagline: false,
                         ),
                       ),
-                    ),
-                  ),
-                  const SizedBox(height: 14),
-                  TextFormField(
-                    controller: confirmPasswordController,
-                    validator: validateConfirmPassword,
-                    obscureText: obscureConfirmPassword,
-                    textDirection: TextDirection.ltr,
-                    decoration: InputDecoration(
-                      labelText: 'تکرار رمز عبور',
-                      prefixIcon: const Icon(
-                        Icons.lock_outline,
+                      const SizedBox(
+                        height: 20,
                       ),
-                      border: const OutlineInputBorder(),
-                      suffixIcon: IconButton(
-                        onPressed: () {
-                          setState(() {
-                            obscureConfirmPassword = !obscureConfirmPassword;
-                          });
-                        },
-                        icon: Icon(
-                          obscureConfirmPassword
-                              ? Icons.visibility
-                              : Icons.visibility_off,
+                      const Text(
+                        'ایجاد حساب کاربری',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: AppColors.textPrimary,
+                          fontSize: 23,
+                          fontWeight: FontWeight.w800,
                         ),
                       ),
-                    ),
-                  ),
-                  const SizedBox(height: 14),
-                  TextFormField(
-                    controller: bioController,
-                    maxLines: 3,
-                    maxLength: 150,
-                    decoration: const InputDecoration(
-                      labelText: 'بیوگرافی کوتاه (اختیاری)',
-                      alignLabelWithHint: true,
-                      prefixIcon: Icon(
-                        Icons.info_outline,
+                      const SizedBox(
+                        height: 7,
                       ),
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  FilledButton(
-                    onPressed: isLoading ? null : register,
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        vertical: 14,
+                      const Text(
+                        'برای شروع سفر سینمایی خود اطلاعات زیر را وارد کنید',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: AppColors.textSecondary,
+                          fontSize: 13,
+                        ),
                       ),
-                      child: isLoading
-                          ? const SizedBox(
-                              width: 22,
-                              height: 22,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                              ),
-                            )
-                          : const Text(
-                              'ثبت‌نام',
-                            ),
-                    ),
+                      const SizedBox(
+                        height: 24,
+                      ),
+                      buildRegisterCard(),
+                      const SizedBox(
+                        height: 16,
+                      ),
+                      buildLoginLink(),
+                    ],
                   ),
-                  const SizedBox(height: 12),
-                  TextButton(
-                    onPressed: isLoading
-                        ? null
-                        : () {
-                            Navigator.pushReplacementNamed(
-                              context,
-                              AppRoutes.login,
-                            );
-                          },
-                    child: const Text(
-                      'قبلاً ثبت‌نام کرده‌اید؟ ورود',
-                    ),
-                  ),
-                ],
-              ),
+                );
+              },
             ),
           ),
         ),
       ),
+    );
+  }
+
+  Widget buildTopBar() {
+    return Align(
+      alignment: Alignment.centerRight,
+      child: Container(
+        decoration: BoxDecoration(
+          color: AppColors.surface.withOpacity(
+            0.76,
+          ),
+          borderRadius: BorderRadius.circular(
+            14,
+          ),
+          border: Border.all(
+            color: AppColors.border,
+          ),
+        ),
+        child: IconButton(
+          onPressed: isLoading
+              ? null
+              : () {
+                  Navigator.maybePop(
+                    context,
+                  );
+                },
+          icon: const Icon(
+            Icons.arrow_forward_rounded,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget buildRegisterCard() {
+    return Container(
+      padding: const EdgeInsets.all(
+        18,
+      ),
+      decoration: BoxDecoration(
+        color: AppColors.surface.withOpacity(
+          0.93,
+        ),
+        borderRadius: BorderRadius.circular(
+          24,
+        ),
+        border: Border.all(
+          color: AppColors.border,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(
+              0.24,
+            ),
+            blurRadius: 28,
+            offset: const Offset(
+              0,
+              14,
+            ),
+          ),
+        ],
+      ),
+      child: Form(
+        key: formKey,
+        child: Column(
+          children: [
+            TextFormField(
+              controller: fullNameController,
+              validator: validateFullName,
+              textInputAction: TextInputAction.next,
+              decoration: const InputDecoration(
+                labelText: 'نام و نام خانوادگی',
+                prefixIcon: Icon(
+                  Icons.person_outline_rounded,
+                ),
+              ),
+            ),
+            const SizedBox(
+              height: 14,
+            ),
+            TextFormField(
+              controller: usernameController,
+              validator: validateUsername,
+              textDirection: TextDirection.ltr,
+              textInputAction: TextInputAction.next,
+              decoration: const InputDecoration(
+                labelText: 'نام کاربری',
+                hintText: 'username',
+                prefixIcon: Icon(
+                  Icons.alternate_email_rounded,
+                ),
+              ),
+            ),
+            const SizedBox(
+              height: 14,
+            ),
+            TextFormField(
+              controller: emailController,
+              validator: validateEmail,
+              keyboardType: TextInputType.emailAddress,
+              textDirection: TextDirection.ltr,
+              textInputAction: TextInputAction.next,
+              decoration: const InputDecoration(
+                labelText: 'ایمیل',
+                hintText: 'example@email.com',
+                prefixIcon: Icon(
+                  Icons.email_outlined,
+                ),
+              ),
+            ),
+            const SizedBox(
+              height: 14,
+            ),
+            TextFormField(
+              controller: passwordController,
+              validator: validatePassword,
+              obscureText: obscurePassword,
+              textDirection: TextDirection.ltr,
+              textInputAction: TextInputAction.next,
+              decoration: InputDecoration(
+                labelText: 'رمز عبور',
+                prefixIcon: const Icon(
+                  Icons.lock_outline_rounded,
+                ),
+                suffixIcon: IconButton(
+                  onPressed: () {
+                    setState(() {
+                      obscurePassword = !obscurePassword;
+                    });
+                  },
+                  icon: Icon(
+                    obscurePassword
+                        ? Icons.visibility_outlined
+                        : Icons.visibility_off_outlined,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(
+              height: 14,
+            ),
+            TextFormField(
+              controller: confirmPasswordController,
+              validator: validateConfirmPassword,
+              obscureText: obscureConfirmPassword,
+              textDirection: TextDirection.ltr,
+              textInputAction: TextInputAction.next,
+              decoration: InputDecoration(
+                labelText: 'تکرار رمز عبور',
+                prefixIcon: const Icon(
+                  Icons.lock_outline_rounded,
+                ),
+                suffixIcon: IconButton(
+                  onPressed: () {
+                    setState(() {
+                      obscureConfirmPassword = !obscureConfirmPassword;
+                    });
+                  },
+                  icon: Icon(
+                    obscureConfirmPassword
+                        ? Icons.visibility_outlined
+                        : Icons.visibility_off_outlined,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(
+              height: 14,
+            ),
+            TextFormField(
+              controller: bioController,
+              maxLines: 3,
+              maxLength: 150,
+              decoration: const InputDecoration(
+                labelText: 'بیوگرافی کوتاه',
+                hintText: 'چند کلمه درباره خودت... (اختیاری)',
+                alignLabelWithHint: true,
+                prefixIcon: Icon(
+                  Icons.edit_note_rounded,
+                ),
+              ),
+            ),
+            const SizedBox(
+              height: 10,
+            ),
+            SizedBox(
+              width: double.infinity,
+              height: 54,
+              child: FilledButton.icon(
+                onPressed: isLoading ? null : register,
+                icon: isLoading
+                    ? const SizedBox(
+                        width: 21,
+                        height: 21,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Icon(
+                        Icons.person_add_alt_1_rounded,
+                      ),
+                label: Text(
+                  isLoading ? 'در حال ساخت حساب...' : 'ثبت‌نام',
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget buildLoginLink() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        const Text(
+          'قبلاً حساب ساخته‌اید؟',
+          style: TextStyle(
+            color: AppColors.textSecondary,
+            fontSize: 13,
+          ),
+        ),
+        TextButton(
+          onPressed: isLoading
+              ? null
+              : () {
+                  Navigator.pushReplacementNamed(
+                    context,
+                    AppRoutes.login,
+                  );
+                },
+          child: const Text(
+            'ورود',
+            style: TextStyle(
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
