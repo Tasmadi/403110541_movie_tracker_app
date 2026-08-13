@@ -40,6 +40,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   String? profileImagePath;
 
+  String? savedProfileImagePath;
+
   bool isLoading = true;
 
   bool isSaving = false;
@@ -104,6 +106,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
       profileImagePath = currentUser.profileImagePath;
 
+      savedProfileImagePath = currentUser.profileImagePath;
+
       setState(() {
         isLoading = false;
       });
@@ -123,11 +127,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> chooseImage() async {
-    String? path = await imageService.pickProfileImage(
-      oldImagePath: profileImagePath,
-    );
+    String? path = await imageService.pickProfileImage();
 
     if (path == null || !mounted) {
+      return;
+    }
+
+    String? previousPath = profileImagePath;
+
+    if (previousPath != null &&
+        previousPath.isNotEmpty &&
+        previousPath != savedProfileImagePath) {
+      await imageService.removeProfileImage(
+        previousPath,
+      );
+    }
+
+    if (!mounted) {
       return;
     }
 
@@ -137,9 +153,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> removeImage() async {
-    await imageService.removeProfileImage(
-      profileImagePath,
-    );
+    String? currentPath = profileImagePath;
+
+    if (currentPath != null &&
+        currentPath.isNotEmpty &&
+        currentPath != savedProfileImagePath) {
+      await imageService.removeProfileImage(
+        currentPath,
+      );
+    }
 
     if (!mounted) {
       return;
@@ -212,6 +234,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     });
 
     try {
+      String? previousSavedImagePath = savedProfileImagePath;
       User updatedUser = await presenter.updateProfile(
         userId: user!.id!,
         fullName: fullNameController.text,
@@ -221,12 +244,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
         profileImagePath: profileImagePath,
       );
 
+      if (previousSavedImagePath != null &&
+          previousSavedImagePath.isNotEmpty &&
+          previousSavedImagePath != updatedUser.profileImagePath) {
+        await imageService.removeProfileImage(
+          previousSavedImagePath,
+        );
+      }
+
       if (!mounted) {
         return;
       }
 
       setState(() {
         user = updatedUser;
+
+        profileImagePath = updatedUser.profileImagePath;
+
+        savedProfileImagePath = updatedUser.profileImagePath;
       });
 
       ScaffoldMessenger.of(context).showSnackBar(

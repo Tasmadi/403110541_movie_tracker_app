@@ -7,9 +7,7 @@ import 'package:path_provider/path_provider.dart';
 class ProfileImageService {
   final ImagePicker imagePicker = ImagePicker();
 
-  Future<String?> pickProfileImage({
-    String? oldImagePath,
-  }) async {
+  Future<String?> pickProfileImage() async {
     XFile? pickedImage = await imagePicker.pickImage(
       source: ImageSource.gallery,
       imageQuality: 85,
@@ -49,13 +47,10 @@ class ProfileImageService {
       fileName,
     );
 
-    File copiedImage = await File(pickedImage.path).copy(
+    File copiedImage = await File(
+      pickedImage.path,
+    ).copy(
       destinationPath,
-    );
-
-    await _deleteOldImage(
-      oldImagePath,
-      profileDirectory.path,
     );
 
     return copiedImage.path;
@@ -68,32 +63,26 @@ class ProfileImageService {
       return;
     }
 
-    File file = File(imagePath);
+    Directory documentsDirectory = await getApplicationDocumentsDirectory();
 
-    if (await file.exists()) {
-      await file.delete();
-    }
-  }
-
-  Future<void> _deleteOldImage(
-    String? oldImagePath,
-    String profileDirectoryPath,
-  ) async {
-    if (oldImagePath == null || oldImagePath.isEmpty) {
-      return;
-    }
+    String profileDirectoryPath = join(
+      documentsDirectory.path,
+      'profile_images',
+    );
 
     if (!isWithin(
       profileDirectoryPath,
-      oldImagePath,
+      imagePath,
     )) {
       return;
     }
 
-    File oldFile = File(oldImagePath);
+    File file = File(
+      imagePath,
+    );
 
-    if (await oldFile.exists()) {
-      await oldFile.delete();
+    if (await file.exists()) {
+      await file.delete();
     }
   }
 }
