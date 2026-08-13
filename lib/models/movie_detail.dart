@@ -1,4 +1,5 @@
 import '../utils/api_config.dart';
+import 'imdb_info.dart';
 import 'cast_member.dart';
 
 class MovieDetail {
@@ -13,6 +14,8 @@ class MovieDetail {
   double voteAverage;
   int voteCount;
   String? imdbId;
+  double? imdbRating;
+  String imdbVotes;
   String director;
   List<String> genres;
   List<String> countries;
@@ -30,6 +33,8 @@ class MovieDetail {
     required this.voteAverage,
     required this.voteCount,
     required this.imdbId,
+    this.imdbRating,
+    this.imdbVotes = '',
     required this.director,
     required this.genres,
     required this.countries,
@@ -38,8 +43,9 @@ class MovieDetail {
 
   factory MovieDetail.fromJson(
     Map<String, dynamic> json,
-    Map<String, dynamic> creditsJson,
-  ) {
+    Map<String, dynamic> creditsJson, {
+    ImdbInfo? imdbInfo,
+  }) {
     List<dynamic> genreData = json['genres'] ?? [];
 
     List<String> genres = genreData.map((item) {
@@ -94,6 +100,8 @@ class MovieDetail {
       voteAverage: (json['vote_average'] as num?)?.toDouble() ?? 0,
       voteCount: json['vote_count'] ?? 0,
       imdbId: json['imdb_id'],
+      imdbRating: imdbInfo?.rating,
+      imdbVotes: imdbInfo?.votes ?? '',
       director: director,
       genres: genres,
       countries: countries,
@@ -138,5 +146,21 @@ class MovieDetail {
     }
 
     return '$hours ساعت و $minutes دقیقه';
+  }
+
+  String get imdbRatingText {
+    if (imdbRating == null) {
+      return 'ناموجود';
+    }
+
+    return imdbRating!.toStringAsFixed(1);
+  }
+
+  String get imdbVotesText {
+    if (imdbVotes.isEmpty) {
+      return 'ناموجود';
+    }
+
+    return imdbVotes;
   }
 }

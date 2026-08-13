@@ -1,5 +1,6 @@
 import '../utils/api_config.dart';
 import 'cast_member.dart';
+import 'imdb_info.dart';
 import 'season.dart';
 
 class SeriesDetail {
@@ -16,6 +17,9 @@ class SeriesDetail {
   int numberOfEpisodes;
   double voteAverage;
   int voteCount;
+  String? imdbId;
+  double? imdbRating;
+  String imdbVotes;
   List<String> genres;
   List<String> creators;
   List<Season> seasons;
@@ -35,6 +39,9 @@ class SeriesDetail {
     required this.numberOfEpisodes,
     required this.voteAverage,
     required this.voteCount,
+    this.imdbId,
+    this.imdbRating,
+    this.imdbVotes = '',
     required this.genres,
     required this.creators,
     required this.seasons,
@@ -43,8 +50,10 @@ class SeriesDetail {
 
   factory SeriesDetail.fromJson(
     Map<String, dynamic> json,
-    Map<String, dynamic> creditsJson,
-  ) {
+    Map<String, dynamic> creditsJson, {
+    String? imdbId,
+    ImdbInfo? imdbInfo,
+  }) {
     List<dynamic> genreData = json['genres'] ?? [];
 
     List<String> genres = genreData.map((item) {
@@ -112,6 +121,9 @@ class SeriesDetail {
       numberOfEpisodes: json['number_of_episodes'] ?? 0,
       voteAverage: (json['vote_average'] as num?)?.toDouble() ?? 0,
       voteCount: json['vote_count'] ?? 0,
+      imdbId: imdbId,
+      imdbRating: imdbInfo?.rating,
+      imdbVotes: imdbInfo?.votes ?? '',
       genres: genres,
       creators: creators,
       seasons: seasons,
@@ -141,5 +153,21 @@ class SeriesDetail {
     }
 
     return lastAirDate.substring(0, 4);
+  }
+
+  String get imdbRatingText {
+    if (imdbRating == null) {
+      return 'ناموجود';
+    }
+
+    return imdbRating!.toStringAsFixed(1);
+  }
+
+  String get imdbVotesText {
+    if (imdbVotes.isEmpty) {
+      return 'ناموجود';
+    }
+
+    return imdbVotes;
   }
 }

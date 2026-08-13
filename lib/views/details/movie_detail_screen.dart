@@ -298,6 +298,10 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                 Icons.star_rounded,
                 'TMDB ${movie.voteAverage.toStringAsFixed(1)}',
               ),
+              buildChip(
+                Icons.local_movies_outlined,
+                'IMDb ${movie.imdbRatingText}',
+              ),
             ],
           ),
         ],
@@ -347,6 +351,14 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
           buildInformationRow(
             'تعداد رأی TMDB',
             movie.voteCount.toString(),
+          ),
+          buildInformationRow(
+            'امتیاز IMDb',
+            movie.imdbRatingText,
+          ),
+          buildInformationRow(
+            'تعداد رأی IMDb',
+            movie.imdbVotesText,
           ),
           buildInformationRow(
             'IMDb ID',

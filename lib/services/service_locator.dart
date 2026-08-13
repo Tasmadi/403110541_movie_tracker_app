@@ -13,6 +13,7 @@ import '../presenters/episode_progress_presenter.dart';
 import '../presenters/custom_list_presenter.dart';
 import '../repositories/custom_list_repository.dart';
 import '../presenters/password_reset_presenter.dart';
+import 'omdb_service.dart';
 import 'email_service.dart';
 import 'password_reset_service.dart';
 import '../presenters/rating_presenter.dart';
@@ -55,8 +56,11 @@ class ServiceLocator {
     repository: userMediaRepository,
   );
 
+  static final OmdbService omdbService = OmdbService();
+
   static final MediaRepository mediaRepository = MediaRepository(
     apiService: apiService,
+    omdbService: omdbService,
   );
 
   static final SplashPresenter splashPresenter = SplashPresenter(

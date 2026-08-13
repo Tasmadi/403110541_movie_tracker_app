@@ -20,4 +20,8 @@ class ApiConfig {
   static const String emailJsPublicKey = String.fromEnvironment(
     'EMAILJS_PUBLIC_KEY',
   );
+
+  static const String omdbApiKey = String.fromEnvironment(
+    'OMDB_API_KEY',
+  );
 }

@@ -383,6 +383,10 @@ class _SeriesDetailScreenState extends State<SeriesDetailScreen> {
                 'TMDB ${item.voteAverage.toStringAsFixed(1)}',
               ),
               buildChip(
+                Icons.local_movies_outlined,
+                'IMDb ${item.imdbRatingText}',
+              ),
+              buildChip(
                 Icons.tv_rounded,
                 '${item.numberOfSeasons} فصل',
               ),
@@ -444,6 +448,18 @@ class _SeriesDetailScreenState extends State<SeriesDetailScreen> {
           buildInfoRow(
             'سازنده',
             item.creators.isEmpty ? 'نامشخص' : item.creators.join(', '),
+          ),
+          buildInfoRow(
+            'امتیاز IMDb',
+            item.imdbRatingText,
+          ),
+          buildInfoRow(
+            'تعداد رأی IMDb',
+            item.imdbVotesText,
+          ),
+          buildInfoRow(
+            'IMDb ID',
+            item.imdbId ?? 'ناموجود',
           ),
         ],
       ),

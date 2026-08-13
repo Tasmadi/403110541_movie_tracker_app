@@ -2,6 +2,8 @@ import '../models/movie.dart';
 import '../models/search_result_item.dart';
 import '../services/api_service.dart';
 import '../models/movie_detail.dart';
+import '../models/imdb_info.dart';
+import '../services/omdb_service.dart';
 import '../models/user_media_item.dart';
 import '../models/search_page_result.dart';
 import '../models/search_type.dart';
@@ -10,6 +12,7 @@ import '../models/series_detail.dart';
 
 class MediaRepository {
   ApiService apiService;
+  OmdbService omdbService;
 
   List<Movie>? popularMoviesCache;
 
@@ -31,6 +34,7 @@ class MediaRepository {
 
   MediaRepository({
     required this.apiService,
+    required this.omdbService,
   });
 
   Future<List<Movie>> getPopularMovies({
@@ -613,7 +617,10 @@ class MediaRepository {
     int movieId, {
     bool forceRefresh = false,
   }) async {
-    if (!forceRefresh && movieDetailCache.containsKey(movieId)) {
+    if (!forceRefresh &&
+        movieDetailCache.containsKey(
+          movieId,
+        )) {
       return movieDetailCache[movieId]!;
     }
 
@@ -631,9 +638,21 @@ class MediaRepository {
 
     Map<String, dynamic> creditsResponse = responses[1];
 
+    String? imdbId = detailResponse['imdb_id']?.toString();
+
+    ImdbInfo? imdbInfo;
+
+    if (imdbId != null && imdbId.isNotEmpty) {
+      imdbInfo = await omdbService.getByImdbId(
+        imdbId,
+        forceRefresh: forceRefresh,
+      );
+    }
+
     MovieDetail movieDetail = MovieDetail.fromJson(
       detailResponse,
       creditsResponse,
+      imdbInfo: imdbInfo,
     );
 
     movieDetailCache[movieId] = movieDetail;
@@ -872,7 +891,10 @@ class MediaRepository {
     int seriesId, {
     bool forceRefresh = false,
   }) async {
-    if (!forceRefresh && seriesDetailCache.containsKey(seriesId)) {
+    if (!forceRefresh &&
+        seriesDetailCache.containsKey(
+          seriesId,
+        )) {
       return seriesDetailCache[seriesId]!;
     }
 
@@ -880,15 +902,41 @@ class MediaRepository {
         await Future.wait<Map<String, dynamic>>([
       apiService.get(
         '/tv/$seriesId',
+        queryParameters: {
+          'append_to_response': 'external_ids',
+        },
       ),
       apiService.get(
         '/tv/$seriesId/aggregate_credits',
       ),
     ]);
 
+    Map<String, dynamic> detailResponse = responses[0];
+
+    Map<String, dynamic> creditsResponse = responses[1];
+
+    String? imdbId;
+
+    dynamic externalIds = detailResponse['external_ids'];
+
+    if (externalIds is Map) {
+      imdbId = externalIds['imdb_id']?.toString();
+    }
+
+    ImdbInfo? imdbInfo;
+
+    if (imdbId != null && imdbId.isNotEmpty) {
+      imdbInfo = await omdbService.getByImdbId(
+        imdbId,
+        forceRefresh: forceRefresh,
+      );
+    }
+
     SeriesDetail seriesDetail = SeriesDetail.fromJson(
-      responses[0],
-      responses[1],
+      detailResponse,
+      creditsResponse,
+      imdbId: imdbId,
+      imdbInfo: imdbInfo,
     );
 
     seriesDetailCache[seriesId] = seriesDetail;
@@ -932,5 +980,7 @@ class MediaRepository {
 
     _movieGenreCache = null;
     _tvGenreCache = null;
+
+    omdbService.clearCache();
   }
 }
