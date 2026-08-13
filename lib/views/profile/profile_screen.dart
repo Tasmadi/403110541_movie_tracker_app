@@ -7,6 +7,8 @@ import '../../widgets/profile_stats_card.dart';
 import '../../presenters/auth_presenter.dart';
 import '../../routes/app_routes.dart';
 import '../../services/profile_image_service.dart';
+import '../../widgets/app_logo.dart';
+import '../../widgets/main_bottom_navigation.dart';
 import '../../services/service_locator.dart';
 import '../../utils/app_colors.dart';
 
@@ -311,19 +313,115 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+  void onNavigationSelected(
+    int index,
+  ) {
+    switch (index) {
+      case 0:
+        Navigator.pushNamedAndRemoveUntil(
+          context,
+          AppRoutes.home,
+          (route) {
+            return false;
+          },
+        );
+        return;
+
+      case 1:
+        Navigator.pushReplacementNamed(
+          context,
+          AppRoutes.search,
+        );
+        return;
+
+      case 2:
+        Navigator.pushReplacementNamed(
+          context,
+          AppRoutes.watchlist,
+        );
+        return;
+
+      case 3:
+        Navigator.pushReplacementNamed(
+          context,
+          AppRoutes.customLists,
+        );
+        return;
+
+      case 4:
+        return;
+    }
+  }
+
+  Widget buildHeader() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        18,
+        12,
+        18,
+        8,
+      ),
+      child: Row(
+        children: [
+          const AppLogo(
+            size: 42,
+            showTitle: false,
+            showTagline: false,
+          ),
+          const SizedBox(
+            width: 10,
+          ),
+          const Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'پروفایل من',
+                  style: TextStyle(
+                    color: AppColors.textPrimary,
+                    fontSize: 21,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                SizedBox(
+                  height: 2,
+                ),
+                Text(
+                  'حساب و فعالیت‌های شما',
+                  style: TextStyle(
+                    color: AppColors.textMuted,
+                    fontSize: 10,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          'پروفایل',
-        ),
-      ),
+      extendBody: true,
       body: SafeArea(
+        bottom: false,
         child: Directionality(
           textDirection: TextDirection.rtl,
-          child: buildBody(),
+          child: Column(
+            children: [
+              buildHeader(),
+              Expanded(
+                child: buildBody(),
+              ),
+            ],
+          ),
         ),
+      ),
+      bottomNavigationBar: MainBottomNavigation(
+        currentIndex: 4,
+        onSelected: onNavigationSelected,
       ),
     );
   }
@@ -331,7 +429,28 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget buildBody() {
     if (isLoading) {
       return const Center(
-        child: CircularProgressIndicator(),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SizedBox(
+              width: 38,
+              height: 38,
+              child: CircularProgressIndicator(
+                strokeWidth: 3,
+              ),
+            ),
+            SizedBox(
+              height: 14,
+            ),
+            Text(
+              'در حال دریافت پروفایل...',
+              style: TextStyle(
+                color: AppColors.textSecondary,
+                fontSize: 12,
+              ),
+            ),
+          ],
+        ),
       );
     }
 
@@ -340,54 +459,119 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
 
     if (errorMessage != null) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Text(
-            errorMessage!,
-          ),
-        ),
-      );
+      return buildErrorView();
     }
 
     return buildMemberProfile();
   }
 
-  Widget buildGuestProfile() {
+  Widget buildErrorView() {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(28),
+        padding: const EdgeInsets.fromLTRB(
+          28,
+          20,
+          28,
+          120,
+        ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const CircleAvatar(
-              radius: 48,
-              child: Icon(
-                Icons.person_outline_rounded,
-                size: 52,
+            const Icon(
+              Icons.error_outline_rounded,
+              color: AppColors.error,
+              size: 54,
+            ),
+            const SizedBox(
+              height: 16,
+            ),
+            Text(
+              errorMessage!,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: AppColors.textSecondary,
               ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(
+              height: 18,
+            ),
+            FilledButton.icon(
+              onPressed: loadProfile,
+              icon: const Icon(
+                Icons.refresh_rounded,
+              ),
+              label: const Text(
+                'تلاش دوباره',
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget buildGuestProfile() {
+    return Center(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(
+          28,
+          20,
+          28,
+          120,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 110,
+              height: 110,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: AppColors.primary.withOpacity(
+                  0.10,
+                ),
+                border: Border.all(
+                  color: AppColors.primary.withOpacity(
+                    0.25,
+                  ),
+                ),
+              ),
+              child: const Icon(
+                Icons.person_outline_rounded,
+                size: 56,
+                color: AppColors.primaryLight,
+              ),
+            ),
+            const SizedBox(
+              height: 22,
+            ),
             const Text(
               'حالت مهمان',
               style: TextStyle(
-                fontSize: 23,
-                fontWeight: FontWeight.bold,
+                color: AppColors.textPrimary,
+                fontSize: 22,
+                fontWeight: FontWeight.w800,
               ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(
+              height: 9,
+            ),
             const Text(
-              'برای ذخیره اطلاعات شخصی، وارد حساب خود شوید یا ثبت‌نام کنید.',
+              'با ساخت حساب می‌توانی فعالیت‌ها، آمار، لیست‌ها و اطلاعات شخصی خودت را ذخیره کنی.',
               textAlign: TextAlign.center,
               style: TextStyle(
                 color: AppColors.textSecondary,
-                height: 1.6,
+                fontSize: 12,
+                height: 1.7,
               ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(
+              height: 25,
+            ),
             SizedBox(
               width: double.infinity,
-              child: FilledButton(
+              height: 52,
+              child: FilledButton.icon(
                 onPressed: () {
                   Navigator.pushNamedAndRemoveUntil(
                     context,
@@ -397,15 +581,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     },
                   );
                 },
-                child: const Text(
+                icon: const Icon(
+                  Icons.login_rounded,
+                ),
+                label: const Text(
                   'ورود',
                 ),
               ),
             ),
-            const SizedBox(height: 10),
+            const SizedBox(
+              height: 11,
+            ),
             SizedBox(
               width: double.infinity,
-              child: OutlinedButton(
+              height: 52,
+              child: OutlinedButton.icon(
                 onPressed: () {
                   Navigator.pushNamedAndRemoveUntil(
                     context,
@@ -415,7 +605,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     },
                   );
                 },
-                child: const Text(
+                icon: const Icon(
+                  Icons.person_add_alt_1_rounded,
+                ),
+                label: const Text(
                   'ایجاد حساب کاربری',
                 ),
               ),
@@ -428,90 +621,398 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Widget buildMemberProfile() {
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(22),
+      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+      padding: const EdgeInsets.fromLTRB(
+        18,
+        8,
+        18,
+        120,
+      ),
       child: Form(
         key: formKey,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            buildProfileImage(),
-            const SizedBox(height: 26),
-            TextFormField(
-              controller: fullNameController,
-              validator: validateFullName,
-              decoration: const InputDecoration(
-                labelText: 'نام و نام خانوادگی',
-                prefixIcon: Icon(
-                  Icons.person_outline,
-                ),
-                border: OutlineInputBorder(),
-              ),
+            buildProfileHero(),
+            const SizedBox(
+              height: 16,
             ),
-            const SizedBox(height: 14),
-            TextFormField(
-              controller: usernameController,
-              validator: validateUsername,
-              textDirection: TextDirection.ltr,
-              decoration: const InputDecoration(
-                labelText: 'نام کاربری',
-                prefixIcon: Icon(
-                  Icons.alternate_email,
-                ),
-                border: OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 14),
-            TextFormField(
-              controller: emailController,
-              validator: validateEmail,
-              keyboardType: TextInputType.emailAddress,
-              textDirection: TextDirection.ltr,
-              decoration: const InputDecoration(
-                labelText: 'ایمیل',
-                prefixIcon: Icon(
-                  Icons.email_outlined,
-                ),
-                border: OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 14),
-            TextFormField(
-              controller: bioController,
-              maxLines: 3,
-              maxLength: 150,
-              decoration: const InputDecoration(
-                labelText: 'بیوگرافی کوتاه',
-                alignLabelWithHint: true,
-                border: OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 16),
             const ProfileStatsCard(),
-            const SizedBox(height: 16),
-            FilledButton.icon(
-              onPressed: isSaving ? null : saveProfile,
-              icon: const Icon(
-                Icons.save_rounded,
-              ),
-              label: Padding(
-                padding: const EdgeInsets.symmetric(
-                  vertical: 13,
+            const SizedBox(
+              height: 16,
+            ),
+            buildAccountCard(),
+            const SizedBox(
+              height: 16,
+            ),
+            buildSecurityCard(),
+            const SizedBox(
+              height: 18,
+            ),
+            buildLogoutButton(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget buildProfileHero() {
+    bool hasImage = profileImagePath != null &&
+        profileImagePath!.isNotEmpty &&
+        File(
+          profileImagePath!,
+        ).existsSync();
+
+    return Container(
+      padding: const EdgeInsets.all(
+        20,
+      ),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topRight,
+          end: Alignment.bottomLeft,
+          colors: [
+            AppColors.primary.withOpacity(
+              0.22,
+            ),
+            AppColors.surface,
+          ],
+        ),
+        borderRadius: BorderRadius.circular(
+          25,
+        ),
+        border: Border.all(
+          color: AppColors.primary.withOpacity(
+            0.22,
+          ),
+        ),
+      ),
+      child: Column(
+        children: [
+          Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Container(
+                width: 122,
+                height: 122,
+                padding: const EdgeInsets.all(
+                  4,
                 ),
-                child: isSaving
-                    ? const SizedBox(
-                        width: 22,
-                        height: 22,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
+                decoration: const BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      AppColors.primaryLight,
+                      AppColors.primary,
+                      AppColors.secondary,
+                    ],
+                  ),
+                ),
+                child: CircleAvatar(
+                  backgroundColor: AppColors.surfaceLight,
+                  backgroundImage: hasImage
+                      ? FileImage(
+                          File(
+                            profileImagePath!,
+                          ),
+                        )
+                      : null,
+                  child: hasImage
+                      ? null
+                      : const Icon(
+                          Icons.person_rounded,
+                          size: 58,
+                          color: AppColors.textSecondary,
                         ),
-                      )
-                    : const Text(
-                        'ذخیره تغییرات',
-                      ),
+                ),
+              ),
+              Positioned(
+                left: -4,
+                bottom: 2,
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: AppColors.primary,
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: AppColors.surface,
+                      width: 3,
+                    ),
+                  ),
+                  child: IconButton(
+                    onPressed: chooseImage,
+                    constraints: const BoxConstraints(
+                      minWidth: 38,
+                      minHeight: 38,
+                    ),
+                    padding: const EdgeInsets.all(
+                      7,
+                    ),
+                    icon: const Icon(
+                      Icons.camera_alt_rounded,
+                      size: 18,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(
+            height: 15,
+          ),
+          Text(
+            user?.fullName ?? '',
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              color: AppColors.textPrimary,
+              fontSize: 21,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          const SizedBox(
+            height: 4,
+          ),
+          Text(
+            '@${user?.username ?? ''}',
+            textDirection: TextDirection.ltr,
+            style: const TextStyle(
+              color: AppColors.primaryLight,
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          if (user != null && user!.bio.trim().isNotEmpty) ...[
+            const SizedBox(
+              height: 9,
+            ),
+            Text(
+              user!.bio,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: AppColors.textSecondary,
+                fontSize: 11,
+                height: 1.6,
               ),
             ),
-            const SizedBox(height: 12),
-            OutlinedButton.icon(
+          ],
+          const SizedBox(
+            height: 12,
+          ),
+          Wrap(
+            alignment: WrapAlignment.center,
+            spacing: 8,
+            children: [
+              TextButton.icon(
+                onPressed: chooseImage,
+                icon: const Icon(
+                  Icons.photo_library_outlined,
+                  size: 18,
+                ),
+                label: Text(
+                  hasImage ? 'تغییر عکس' : 'انتخاب عکس',
+                ),
+              ),
+              if (hasImage)
+                TextButton.icon(
+                  onPressed: removeImage,
+                  icon: const Icon(
+                    Icons.delete_outline_rounded,
+                    color: AppColors.error,
+                    size: 18,
+                  ),
+                  label: const Text(
+                    'حذف عکس',
+                    style: TextStyle(
+                      color: AppColors.error,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget buildAccountCard() {
+    return Container(
+      padding: const EdgeInsets.all(
+        17,
+      ),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(
+          22,
+        ),
+        border: Border.all(
+          color: AppColors.border,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const Row(
+            children: [
+              Icon(
+                Icons.manage_accounts_rounded,
+                color: AppColors.primaryLight,
+                size: 22,
+              ),
+              SizedBox(
+                width: 8,
+              ),
+              Text(
+                'اطلاعات حساب',
+                style: TextStyle(
+                  color: AppColors.textPrimary,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(
+            height: 17,
+          ),
+          TextFormField(
+            controller: fullNameController,
+            validator: validateFullName,
+            decoration: const InputDecoration(
+              labelText: 'نام و نام خانوادگی',
+              prefixIcon: Icon(
+                Icons.person_outline_rounded,
+              ),
+            ),
+          ),
+          const SizedBox(
+            height: 14,
+          ),
+          TextFormField(
+            controller: usernameController,
+            validator: validateUsername,
+            textDirection: TextDirection.ltr,
+            decoration: const InputDecoration(
+              labelText: 'نام کاربری',
+              prefixIcon: Icon(
+                Icons.alternate_email_rounded,
+              ),
+            ),
+          ),
+          const SizedBox(
+            height: 14,
+          ),
+          TextFormField(
+            controller: emailController,
+            validator: validateEmail,
+            keyboardType: TextInputType.emailAddress,
+            textDirection: TextDirection.ltr,
+            decoration: const InputDecoration(
+              labelText: 'ایمیل',
+              prefixIcon: Icon(
+                Icons.email_outlined,
+              ),
+            ),
+          ),
+          const SizedBox(
+            height: 14,
+          ),
+          TextFormField(
+            controller: bioController,
+            maxLines: 3,
+            maxLength: 150,
+            decoration: const InputDecoration(
+              labelText: 'بیوگرافی کوتاه',
+              alignLabelWithHint: true,
+              prefixIcon: Icon(
+                Icons.edit_note_rounded,
+              ),
+            ),
+          ),
+          const SizedBox(
+            height: 10,
+          ),
+          SizedBox(
+            height: 52,
+            child: FilledButton.icon(
+              onPressed: isSaving ? null : saveProfile,
+              icon: isSaving
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
+                  : const Icon(
+                      Icons.save_rounded,
+                    ),
+              label: Text(
+                isSaving ? 'در حال ذخیره...' : 'ذخیره تغییرات',
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget buildSecurityCard() {
+    return Container(
+      padding: const EdgeInsets.all(
+        17,
+      ),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(
+          22,
+        ),
+        border: Border.all(
+          color: AppColors.border,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const Row(
+            children: [
+              Icon(
+                Icons.security_rounded,
+                color: AppColors.primaryLight,
+                size: 22,
+              ),
+              SizedBox(
+                width: 8,
+              ),
+              Text(
+                'امنیت حساب',
+                style: TextStyle(
+                  color: AppColors.textPrimary,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(
+            height: 10,
+          ),
+          const Text(
+            'در صورت نیاز می‌توانید رمز عبور حساب خود را تغییر دهید.',
+            style: TextStyle(
+              color: AppColors.textSecondary,
+              fontSize: 11,
+              height: 1.6,
+            ),
+          ),
+          const SizedBox(
+            height: 15,
+          ),
+          SizedBox(
+            height: 48,
+            child: OutlinedButton.icon(
               onPressed: showChangePasswordDialog,
               icon: const Icon(
                 Icons.lock_reset_rounded,
@@ -520,86 +1021,30 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 'تغییر رمز عبور',
               ),
             ),
-            const SizedBox(height: 26),
-            const Divider(),
-            const SizedBox(height: 10),
-            TextButton.icon(
-              onPressed: logout,
-              icon: const Icon(
-                Icons.logout_rounded,
-                color: AppColors.error,
-              ),
-              label: const Text(
-                'خروج از حساب',
-                style: TextStyle(
-                  color: AppColors.error,
-                ),
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 
-  Widget buildProfileImage() {
-    bool hasImage = profileImagePath != null &&
-        profileImagePath!.isNotEmpty &&
-        File(
-          profileImagePath!,
-        ).existsSync();
-
-    return Column(
-      children: [
-        CircleAvatar(
-          radius: 58,
-          backgroundColor: const Color(0xFFE8E8EE),
-          backgroundImage: hasImage
-              ? FileImage(
-                  File(
-                    profileImagePath!,
-                  ),
-                )
-              : null,
-          child: hasImage
-              ? null
-              : const Icon(
-                  Icons.person_rounded,
-                  size: 58,
-                  color: AppColors.textSecondary,
-                ),
+  Widget buildLogoutButton() {
+    return SizedBox(
+      height: 50,
+      child: OutlinedButton.icon(
+        onPressed: logout,
+        style: OutlinedButton.styleFrom(
+          foregroundColor: AppColors.error,
+          side: const BorderSide(
+            color: AppColors.error,
+          ),
         ),
-        const SizedBox(height: 12),
-        Wrap(
-          alignment: WrapAlignment.center,
-          spacing: 8,
-          children: [
-            TextButton.icon(
-              onPressed: chooseImage,
-              icon: const Icon(
-                Icons.photo_library_outlined,
-              ),
-              label: Text(
-                hasImage ? 'تغییر عکس' : 'انتخاب عکس',
-              ),
-            ),
-            if (hasImage)
-              TextButton.icon(
-                onPressed: removeImage,
-                icon: const Icon(
-                  Icons.delete_outline,
-                  color: AppColors.error,
-                ),
-                label: const Text(
-                  'حذف',
-                  style: TextStyle(
-                    color: AppColors.error,
-                  ),
-                ),
-              ),
-          ],
+        icon: const Icon(
+          Icons.logout_rounded,
         ),
-      ],
+        label: const Text(
+          'خروج از حساب',
+        ),
+      ),
     );
   }
 
