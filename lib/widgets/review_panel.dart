@@ -503,7 +503,7 @@ class _ReviewPanelState extends State<ReviewPanel> {
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFFF2F2F6),
+        color: AppColors.surfaceLight,
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
@@ -559,7 +559,7 @@ class _ReviewPanelState extends State<ReviewPanel> {
 
     return CircleAvatar(
       radius: 22,
-      backgroundColor: const Color(0xFFE8E8EE),
+      backgroundColor: AppColors.surfaceLight,
       backgroundImage: hasImage
           ? FileImage(
               File(path),
