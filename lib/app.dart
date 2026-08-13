@@ -33,7 +33,7 @@ class MovieTrackerApp extends StatelessWidget {
     return MaterialApp(
       title: AppStrings.appName,
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.lightTheme,
+      theme: AppTheme.darkTheme,
       initialRoute: AppRoutes.splash,
       routes: {
         AppRoutes.splash: (context) {
