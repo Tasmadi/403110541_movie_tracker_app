@@ -29,30 +29,18 @@ dev_dependencies:
 flutter:
   uses-material-design: true
 
-  assets:
-    - assets/icons/
-
 flutter_launcher_icons:
   android: true
-  ios: false
+  ios: true
+  image_path: assets/icons/tv_time_icon.png
 
-  image_path_android: "assets/icons/tv_time_icon.png"
-
+  adaptive_icon_foreground: assets/icons/tv_time_foreground.png
   adaptive_icon_background: "#0D0D12"
-  adaptive_icon_foreground: "assets/icons/tv_time_foreground.png"
-  adaptive_icon_foreground_inset: 16
-
-  min_sdk_android: 21
 
 flutter_native_splash:
-  android: true
-  ios: false
-  web: false
-
   color: "#0D0D12"
-  image: "assets/icons/tv_time_splash.png"
-  android_gravity: center
+  image: assets/icons/tv_time_splash.png
 
   android_12:
     color: "#0D0D12"
-    image: "assets/icons/tv_time_splash.png"
+    image: assets/icons/tv_time_splash.png
